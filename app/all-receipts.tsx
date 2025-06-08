@@ -52,8 +52,8 @@ export default function AllReceiptsScreen() {
       const searchLower = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(receipt => 
         receipt.company.toLowerCase().includes(searchLower) ||
-        receipt.products.some(product => 
-          product.name.toLowerCase().includes(searchLower)
+        receipt.items.some(item => 
+          item.name.toLowerCase().includes(searchLower)
         )
       );
     }
@@ -86,6 +86,9 @@ export default function AllReceiptsScreen() {
       const maxAmount = parseFloat(filters.maxAmount);
       filtered = filtered.filter(receipt => receipt.totalAmount <= maxAmount);
     }
+
+    // Sort receipts by date, most recent first
+    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     setFilteredReceipts(filtered);
   };

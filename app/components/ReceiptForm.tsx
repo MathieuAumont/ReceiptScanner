@@ -63,9 +63,15 @@ export default function ReceiptForm({
     return new Date();
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [items, setItems] = useState<Item[]>(
-    initialReceipt?.items || [{ id: generateId(), name: '', price: 0, quantity: 1 }]
-  );
+  const [items, setItems] = useState<Item[]>(() => {
+    if (initialReceipt?.items) {
+      return initialReceipt.items.map(item => ({
+        ...item,
+        id: item.id || generateId()
+      }));
+    }
+    return [{ id: generateId(), name: '', price: 0, quantity: 1 }];
+  });
   const [tps, setTPS] = useState(initialReceipt?.taxes.tps || 0);
   const [tvq, setTVQ] = useState(initialReceipt?.taxes.tvq || 0);
   const [category, setCategory] = useState(initialReceipt?.category || categories[0]?.id);
@@ -123,16 +129,26 @@ export default function ReceiptForm({
   };
 
   const addItem = () => {
-    setItems([...items, { id: generateId(), name: '', price: 0, quantity: 1 }]);
+    const newItem = { 
+      id: generateId(), 
+      name: '', 
+      price: 0, 
+      quantity: 1 
+    };
+    setItems(prevItems => [...prevItems, newItem]);
   };
 
   const removeItem = (itemId: string) => {
-    if (items.length === 1) return;
-    setItems(items.filter(item => item.id !== itemId));
+    if (items.length === 1) {
+      // If it's the last item, just clear it instead of removing
+      setItems([{ id: generateId(), name: '', price: 0, quantity: 1 }]);
+      return;
+    }
+    setItems(prevItems => prevItems.filter(item => item.id !== itemId));
   };
 
   const updateItem = (id: string, field: keyof Item, value: string | number) => {
-    setItems(items.map(item => {
+    setItems(prevItems => prevItems.map(item => {
       if (item.id === id) {
         return {
           ...item,
