@@ -5,6 +5,7 @@ import HeaderBar from '@/app/components/HeaderBar';
 import { clearAllData, exportData, getStorageSize } from '@/app/lib/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { router } from 'expo-router';
 
 export default function SettingsScreen() {
   const { isDarkMode, toggleTheme, theme } = useTheme();
@@ -81,6 +82,10 @@ export default function SettingsScreen() {
       console.error('Error exporting data:', error);
       Alert.alert('Error', 'Failed to export data');
     }
+  };
+
+  const handleHelpPress = () => {
+    router.push('/help-support');
   };
 
   return (
@@ -160,7 +165,10 @@ export default function SettingsScreen() {
         <View style={[styles.section, { backgroundColor: theme.card }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>About</Text>
           
-          <TouchableOpacity style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+          <TouchableOpacity 
+            style={[styles.settingItem, { borderBottomColor: theme.border }]}
+            onPress={handleHelpPress}
+          >
             <View style={styles.settingLabelContainer}>
               <HelpCircle size={20} color={theme.text} style={styles.settingIcon} />
               <Text style={[styles.settingLabel, { color: theme.text }]}>Help & Support</Text>

@@ -423,7 +423,7 @@ export default function ReceiptForm({
                 placeholderTextColor={theme.textSecondary}
                 value={item.price === 0 ? '' : item.price.toString()}
                 onChangeText={(value) => updateItem(item.id, 'price', value)}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 ref={(el) => { inputRefs.current[`item-${index}-price`] = el }}
                 onSubmitEditing={() => focusNextInput(`item-${index}-price`, `item-${index}-quantity`)}
                 onFocus={() => scrollToInput(inputRefs.current[`item-${index}-price`])}
@@ -491,10 +491,10 @@ export default function ReceiptForm({
         
         <View style={[styles.buttonContainer, { backgroundColor: theme.background }]}>
           <TouchableOpacity
-            style={[styles.resetButton, { backgroundColor: theme.error }]}
+            style={[styles.resetButton, { backgroundColor: '#B71C1C' }]}
             onPress={resetForm}
           >
-            <Text style={[styles.resetButtonText, { color: theme.error }]}>Réinitialiser</Text>
+            <Text style={[styles.resetButtonText, { color: '#FFFFFF' }]}>Réinitialiser</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.saveButton, { backgroundColor: theme.accent }]}
@@ -725,14 +725,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   resetButton: {
-    backgroundColor: '#FF3B30',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
-    opacity: 0.8,
+    flex: 1,
   },
   resetButtonText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -741,6 +739,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    flex: 2,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -803,4 +802,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-}); 
+});

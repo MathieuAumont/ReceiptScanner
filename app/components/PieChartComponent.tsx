@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions, Text } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
+import { formatCurrency } from '@/app/lib/formatting';
 
 export interface PieChartData {
   id: string;
@@ -23,61 +23,60 @@ export default function PieChartComponent({ data = [] }: PieChartComponentProps)
     );
   }
 
-  const formatAmount = (amount: number) => {
-    return `${amount.toFixed(2)} $`;
+  const size = 200;
+  const radius = size / 2 - 20; // Leave some padding
+  const center = size / 2;
+  const total = data.reduce((sum, item) => sum + item.amount, 0);
+
+  // Create simple pie chart using positioned views
+  const renderPieSlices = () => {
+    let currentAngle = 0;
+    
+    return data.map((item, index) => {
+      const percentage = item.amount / total;
+      const angle = percentage * 360;
+      
+      // For simplicity, we'll show colored squares instead of actual pie slices
+      // This is a basic implementation - for production, consider using SVG or Canvas
+      const sliceStyle = {
+        backgroundColor: item.color,
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        marginRight: 8,
+      };
+      
+      currentAngle += angle;
+      
+      return (
+        <View key={item.id} style={styles.legendItem}>
+          <View style={sliceStyle} />
+          <View style={styles.legendTextContainer}>
+            <Text style={styles.legendName} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.legendAmount}>
+              {formatCurrency(item.amount, 'CAD')} ({item.percentage.toFixed(1)}%)
+            </Text>
+          </View>
+        </View>
+      );
+    });
   };
-
-  const chartConfig = {
-    backgroundGradientFrom: '#FFFFFF',
-    backgroundGradientTo: '#FFFFFF',
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    strokeWidth: 2,
-    barPercentage: 0.5,
-    decimalPlaces: 2,
-  };
-
-  const chartData = data
-    .filter(item => item.amount > 0)
-    .sort((a, b) => b.amount - a.amount)
-    .map(item => ({
-      name: `${item.name}\n${formatAmount(item.amount)}`,
-      population: item.amount,
-      color: item.color,
-      legendFontColor: '#000000',
-      legendFontSize: 12,
-    }));
-
-  if (chartData.length === 0) {
-    return (
-      <View style={[styles.container, styles.emptyContainer]}>
-        <Text style={styles.emptyText}>Aucune donnée à afficher</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
-      <PieChart
-        data={chartData}
-        width={Dimensions.get('window').width - 32}
-        height={220}
-        chartConfig={chartConfig}
-        accessor="population"
-        backgroundColor="transparent"
-        paddingLeft="15"
-        absolute
-      />
+      {/* Simple circular representation */}
+      <View style={styles.chartCircle}>
+        <Text style={styles.totalLabel}>Total</Text>
+        <Text style={styles.totalAmount}>
+          {formatCurrency(total, 'CAD')}
+        </Text>
+      </View>
+      
+      {/* Legend */}
       <View style={styles.legend}>
-        {data.map((item) => (
-          <View key={item.id} style={styles.legendItem}>
-            <View style={[styles.colorBox, { backgroundColor: item.color }]} />
-            <View style={styles.legendText}>
-              <Text style={styles.categoryName}>{item.name}</Text>
-              <Text style={styles.amount}>{formatAmount(item.amount)}</Text>
-              <Text style={styles.percentage}>({item.percentage.toFixed(2)}%)</Text>
-            </View>
-          </View>
-        ))}
+        {renderPieSlices()}
       </View>
     </View>
   );
@@ -85,53 +84,60 @@ export default function PieChartComponent({ data = [] }: PieChartComponentProps)
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginVertical: 8,
+    alignItems: 'center',
+    paddingVertical: 16,
   },
   emptyContainer: {
-    height: 220,
+    height: 200,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   emptyText: {
     fontSize: 16,
     color: '#8E8E93',
   },
+  chartCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: '#007AFF',
+  },
+  totalLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  totalAmount: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
   legend: {
-    marginTop: 20,
     width: '100%',
+    maxWidth: 300,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+    paddingHorizontal: 8,
   },
-  colorBox: {
-    width: 16,
-    height: 16,
-    marginRight: 8,
-    borderRadius: 4,
-  },
-  legendText: {
+  legendTextContainer: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  categoryName: {
-    flex: 1,
+  legendName: {
     fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 2,
   },
-  amount: {
-    fontSize: 14,
-    marginHorizontal: 8,
+  legendAmount: {
+    fontSize: 12,
+    color: '#666',
   },
-  percentage: {
-    fontSize: 14,
-    color: '#666666',
-    width: 80,
-    textAlign: 'right',
-  },
-}); 
+});
