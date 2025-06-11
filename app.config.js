@@ -39,6 +39,7 @@ module.exports = {
   ],
   scheme: 'receiptscanner',
   extra: {
-    openAiApiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY
+    openAiApiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY || '',
+    googleCloudApiKey: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY || ''
   }
-}; 
+};

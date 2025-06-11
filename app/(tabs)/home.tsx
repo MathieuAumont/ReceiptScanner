@@ -20,6 +20,7 @@ export default function HomeScreen() {
   const [monthlyBudget, setMonthlyBudget] = useState(0);
   const [monthlySpending, setMonthlySpending] = useState(0);
   const [totalBudget, setTotalBudget] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<SearchFiltersType>({
     searchTerm: '',
     startDate: null,
@@ -37,11 +38,14 @@ export default function HomeScreen() {
   }, [isFocused]);
 
   useEffect(() => {
-    applyFilters();
-  }, [filters, recentReceipts]);
+    if (!loading) {
+      applyFilters();
+    }
+  }, [filters, recentReceipts, loading]);
   
   const loadData = async () => {
     try {
+      setLoading(true);
       const receipts = await getRecentReceipts(5);
       setRecentReceipts(receipts);
       
@@ -71,6 +75,8 @@ export default function HomeScreen() {
       setMonthlyBudget(0);
       setMonthlySpending(0);
       setTotalBudget(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -155,6 +161,19 @@ export default function HomeScreen() {
     router.push('/all-receipts');
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <HeaderBar title="Receipt Scanner" />
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: theme.text }]}>
+            Chargement...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <HeaderBar title="Receipt Scanner" />
@@ -205,6 +224,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
   },
   scrollView: {
     flex: 1,

@@ -14,11 +14,19 @@ const OPENAI_API_KEY = Constants.expoConfig?.extra?.openAiApiKey;
 const VISION_MODEL = 'gpt-4o';
 const CHAT_MODEL = 'gpt-4-1106-preview';
 
-// Initialiser le client OpenAI
-const openai = new OpenAI({
-  apiKey: Constants.expoConfig?.extra?.openAiApiKey,
-  dangerouslyAllowBrowser: true // Nécessaire pour React Native
-});
+// Initialiser le client OpenAI seulement si la clé API est disponible
+let openai: OpenAI | null = null;
+
+if (OPENAI_API_KEY && OPENAI_API_KEY.trim() !== '') {
+  try {
+    openai = new OpenAI({
+      apiKey: OPENAI_API_KEY,
+      dangerouslyAllowBrowser: true // Nécessaire pour React Native
+    });
+  } catch (error) {
+    console.warn('Failed to initialize OpenAI client:', error);
+  }
+}
 
 // Note: Nous utilisons maintenant gpt-4o, le nouveau modèle de vision d'OpenAI
 // Il offre de meilleures performances et une meilleure précision pour l'analyse d'images
@@ -65,6 +73,10 @@ async function getImageBase64(uri: string): Promise<string> {
 }
 
 async function analyzeTextWithOpenAI(text: string) {
+  if (!OPENAI_API_KEY || OPENAI_API_KEY.trim() === '') {
+    throw new Error('OpenAI API key is not configured. Please set EXPO_PUBLIC_OPENAI_API_KEY in your environment variables.');
+  }
+
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -103,6 +115,10 @@ interface AnalyzedItem {
 }
 
 export async function analyzeReceiptImage(imageUri: string) {
+  if (!GOOGLE_API_KEY || GOOGLE_API_KEY.trim() === '') {
+    throw new Error('Google Cloud API key is not configured. Please set EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY in your environment variables.');
+  }
+
   try {
     // 1. OCR avec Google Cloud Vision
     const imageContent = await getImageBase64(imageUri);
@@ -164,6 +180,10 @@ export async function analyzeReceiptImage(imageUri: string) {
 }
 
 export async function analyzeSpendingData(question: string): Promise<string> {
+  if (!OPENAI_API_KEY || OPENAI_API_KEY.trim() === '') {
+    throw new Error('OpenAI API key is not configured. Please set EXPO_PUBLIC_OPENAI_API_KEY in your environment variables.');
+  }
+
   try {
     const receipts = await getReceipts();
     const language = detectLanguage(question);
@@ -212,6 +232,10 @@ interface ReceiptItem {
 }
 
 export async function extractReceiptData(imageBase64: string): Promise<Partial<Receipt>> {
+  if (!openai) {
+    throw new Error('OpenAI client is not initialized. Please check your API key configuration.');
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: VISION_MODEL,
@@ -319,4 +343,4 @@ Format attendu :
 }
 
 // Export par défaut vide pour éviter l'erreur de route
-export default {}; 
+export default {};
