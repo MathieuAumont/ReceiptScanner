@@ -51,7 +51,6 @@ export default function BudgetScreen() {
     try {
       const allCategories = await getAllCategories();
       setCategories(allCategories);
-      // Initialize budget items for all categories if empty
       if (currentBudget.length === 0) {
         setCurrentBudget(
           allCategories.map(cat => ({
@@ -72,7 +71,6 @@ export default function BudgetScreen() {
         const budget = JSON.parse(storedBudget);
         setCurrentBudget(budget);
       } else {
-        // Initialize with empty budget for all categories
         const allCategories = await getAllCategories();
         const emptyBudget = allCategories.map(cat => ({
           categoryId: cat.id,
@@ -90,21 +88,18 @@ export default function BudgetScreen() {
       const receipts = await getReceipts();
       const [year, month] = selectedMonth.split('-');
       
-      // Filter receipts for the selected month
       const monthReceipts = receipts.filter(receipt => {
         const receiptDate = new Date(receipt.date);
         return receiptDate.getFullYear() === parseInt(year) && 
                receiptDate.getMonth() === parseInt(month) - 1;
       });
 
-      // Calculate spending by category
       const spendingByCategory = monthReceipts.reduce((acc, receipt) => {
         const categoryId = receipt.category;
         acc[categoryId] = (acc[categoryId] || 0) + receipt.totalAmount;
         return acc;
       }, {} as { [key: string]: number });
 
-      // Calculate category spending with status
       const categorySpendingData = categories.map(category => {
         const budgetItem = currentBudget.find(item => item.categoryId === category.id);
         const budgeted = budgetItem?.amount || 0;
@@ -129,7 +124,6 @@ export default function BudgetScreen() {
 
       setCategorySpending(categorySpendingData);
       
-      // Calculate totals
       const totalBudgetAmount = currentBudget.reduce((sum, item) => sum + item.amount, 0);
       const totalSpentAmount = Object.values(spendingByCategory).reduce((sum, amount) => sum + amount, 0);
       
@@ -148,7 +142,7 @@ export default function BudgetScreen() {
       );
       setIsEditing(false);
       Alert.alert('Succès', 'Budget sauvegardé avec succès');
-      calculateSpending(); // Recalculate after saving
+      calculateSpending();
     } catch (error) {
       console.error('Error saving budget:', error);
       Alert.alert('Erreur', 'Impossible de sauvegarder le budget');
@@ -201,11 +195,11 @@ export default function BudgetScreen() {
   const getStatusIcon = (status: 'good' | 'warning' | 'danger') => {
     switch (status) {
       case 'good':
-        return <TrendingUp size={16} color="#4CAF50" />;
+        return <TrendingUp size={14} color="#4CAF50" />;
       case 'warning':
-        return <AlertTriangle size={16} color="#FF9800" />;
+        return <AlertTriangle size={14} color="#FF9800" />;
       case 'danger':
-        return <TrendingDown size={16} color={theme.error} />;
+        return <TrendingDown size={14} color={theme.error} />;
       default:
         return null;
     }
@@ -218,7 +212,7 @@ export default function BudgetScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <HeaderBar title="Budget" />
 
-      {/* Month Selector */}
+      {/* Compact Month Selector */}
       <View style={[styles.monthSelector, { backgroundColor: theme.card }]}>
         <TouchableOpacity onPress={selectPreviousMonth} style={styles.monthButton}>
           <Text style={[styles.monthButtonText, { color: theme.accent }]}>‹</Text>
@@ -231,19 +225,23 @@ export default function BudgetScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Overall Progress */}
+      {/* Compact Overall Progress */}
       <View style={[styles.overallProgress, { backgroundColor: theme.card }]}>
-        <View style={styles.overallHeader}>
-          <Text style={[styles.overallTitle, { color: theme.text }]}>Progression globale</Text>
-          {getStatusIcon(overallStatus)}
-        </View>
-        <View style={styles.overallAmounts}>
-          <Text style={[styles.overallSpent, { color: theme.text }]}>
-            {formatCurrency(totalSpent, 'CAD')} dépensé
-          </Text>
-          <Text style={[styles.overallBudget, { color: theme.textSecondary }]}>
-            sur {formatCurrency(totalBudget, 'CAD')}
-          </Text>
+        <View style={styles.overallRow}>
+          <View style={styles.overallAmounts}>
+            <Text style={[styles.overallSpent, { color: theme.text }]}>
+              {formatCurrency(totalSpent, 'CAD')}
+            </Text>
+            <Text style={[styles.overallBudget, { color: theme.textSecondary }]}>
+              / {formatCurrency(totalBudget, 'CAD')}
+            </Text>
+          </View>
+          <View style={styles.statusContainer}>
+            {getStatusIcon(overallStatus)}
+            <Text style={[styles.percentageText, { color: getStatusColor(overallStatus) }]}>
+              {overallPercentage.toFixed(0)}%
+            </Text>
+          </View>
         </View>
         <View style={[styles.progressBarContainer, { backgroundColor: theme.border }]}>
           <View 
@@ -256,9 +254,6 @@ export default function BudgetScreen() {
             ]} 
           />
         </View>
-        <Text style={[styles.percentageText, { color: getStatusColor(overallStatus) }]}>
-          {overallPercentage.toFixed(1)}%
-        </Text>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -270,8 +265,8 @@ export default function BudgetScreen() {
 
           return (
             <View key={category.id} style={[styles.budgetItem, { backgroundColor: theme.card }]}>
-              <View style={styles.categoryHeader}>
-                <View style={styles.categoryInfo}>
+              <View style={styles.categoryRow}>
+                <View style={styles.categoryLeft}>
                   <Text style={styles.categoryIcon}>{category.icon}</Text>
                   <View style={styles.categoryDetails}>
                     <Text style={[styles.categoryName, { color: theme.text }]}>
@@ -287,15 +282,33 @@ export default function BudgetScreen() {
                     </View>
                   </View>
                 </View>
-                <View style={styles.statusContainer}>
-                  {getStatusIcon(categoryData.status)}
-                  <Text style={[styles.percentageText, { color: getStatusColor(categoryData.status) }]}>
-                    {categoryData.percentage.toFixed(0)}%
-                  </Text>
+                
+                <View style={styles.categoryRight}>
+                  {isEditing ? (
+                    <TextInput
+                      style={[styles.compactInput, { 
+                        borderColor: theme.border,
+                        color: theme.text,
+                        backgroundColor: theme.background
+                      }]}
+                      keyboardType="numeric"
+                      value={budgetItem?.amount.toString() || '0'}
+                      onChangeText={(text) => updateBudgetAmount(category.id, text)}
+                      placeholder="0"
+                      placeholderTextColor={theme.textSecondary}
+                    />
+                  ) : (
+                    <View style={styles.statusContainer}>
+                      {getStatusIcon(categoryData.status)}
+                      <Text style={[styles.percentageText, { color: getStatusColor(categoryData.status) }]}>
+                        {categoryData.percentage.toFixed(0)}%
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
-              {/* Progress Bar */}
+              {/* Compact Progress Bar */}
               <View style={[styles.progressBarContainer, { backgroundColor: theme.border }]}>
                 <View 
                   style={[
@@ -308,41 +321,21 @@ export default function BudgetScreen() {
                 />
               </View>
 
-              {/* Budget Input */}
-              {isEditing ? (
-                <TextInput
-                  style={[styles.input, { 
-                    borderColor: theme.border,
-                    color: theme.text,
-                    backgroundColor: theme.background
-                  }]}
-                  keyboardType="numeric"
-                  value={budgetItem?.amount.toString() || '0'}
-                  onChangeText={(text) => updateBudgetAmount(category.id, text)}
-                  placeholder="Budget"
-                  placeholderTextColor={theme.textSecondary}
-                />
-              ) : null}
-
-              {/* Remaining Amount */}
-              {categoryData.budgeted > 0 && (
-                <View style={styles.remainingContainer}>
-                  <Text style={[styles.remainingLabel, { color: theme.textSecondary }]}>
-                    Restant: 
-                  </Text>
-                  <Text style={[
-                    styles.remainingAmount, 
-                    { color: categoryData.budgeted - categoryData.spent >= 0 ? '#4CAF50' : theme.error }
-                  ]}>
-                    {formatCurrency(categoryData.budgeted - categoryData.spent, 'CAD')}
-                  </Text>
-                </View>
+              {/* Remaining Amount - Only show if budget > 0 and not editing */}
+              {!isEditing && categoryData.budgeted > 0 && (
+                <Text style={[
+                  styles.remainingText, 
+                  { color: categoryData.budgeted - categoryData.spent >= 0 ? '#4CAF50' : theme.error }
+                ]}>
+                  Restant: {formatCurrency(categoryData.budgeted - categoryData.spent, 'CAD')}
+                </Text>
               )}
             </View>
           );
         })}
       </ScrollView>
 
+      {/* Compact Footer */}
       <View style={[styles.footer, { 
         backgroundColor: theme.card,
         borderTopColor: theme.border
@@ -350,10 +343,10 @@ export default function BudgetScreen() {
         {isEditing ? (
           <View style={styles.editingFooter}>
             <TouchableOpacity 
-              style={[styles.button, styles.cancelButton, { backgroundColor: theme.background }]} 
+              style={[styles.button, styles.cancelButton]} 
               onPress={() => {
                 setIsEditing(false);
-                loadBudget(); // Reset changes
+                loadBudget();
               }}
             >
               <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Annuler</Text>
@@ -370,7 +363,7 @@ export default function BudgetScreen() {
             style={[styles.button, { backgroundColor: '#4CAF50' }]}
             onPress={() => setIsEditing(true)}
           >
-            <Text style={styles.buttonText}>Modifier le budget</Text>
+            <Text style={styles.buttonText}>Modifier</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -386,62 +379,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
     marginHorizontal: 16,
     marginTop: 8,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   monthButton: {
-    padding: 8,
+    padding: 6,
   },
   monthButtonText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   monthText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   overallProgress: {
     margin: 16,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  overallHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  overallTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  overallAmounts: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 12,
-  },
-  overallSpent: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  overallBudget: {
-    fontSize: 16,
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  budgetItem: {
-    padding: 16,
-    marginBottom: 12,
+    padding: 14,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -449,94 +405,124 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  categoryHeader: {
+  overallRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  categoryInfo: {
+  overallAmounts: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  overallSpent: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginRight: 4,
+  },
+  overallBudget: {
+    fontSize: 14,
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  budgetItem: {
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
   categoryIcon: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: 20,
+    marginRight: 10,
   },
   categoryDetails: {
     flex: 1,
   },
   categoryName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   amountRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   spentAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginRight: 4,
   },
   budgetAmount: {
-    fontSize: 14,
+    fontSize: 12,
+  },
+  categoryRight: {
+    alignItems: 'flex-end',
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   percentageText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
   },
   progressBarContainer: {
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 12,
+    height: 6,
+    borderRadius: 3,
+    marginBottom: 6,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 3,
   },
-  input: {
+  compactInput: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  remainingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  remainingLabel: {
+    borderRadius: 6,
+    padding: 8,
     fontSize: 14,
-    marginRight: 4,
+    width: 80,
+    textAlign: 'right',
   },
-  remainingAmount: {
-    fontSize: 14,
-    fontWeight: '600',
+  remainingText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'right',
   },
   footer: {
-    padding: 16,
+    padding: 12,
     borderTopWidth: 1,
   },
   editingFooter: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   button: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
   cancelButton: {
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#E5E5EA',
   },
@@ -545,11 +531,11 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
 });
