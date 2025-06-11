@@ -9,6 +9,7 @@ import { defaultCategories } from '@/app/lib/categories';
 import { Receipt, Category } from '@/app/lib/types';
 import { generateId } from '@/app/lib/helpers';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 export default function ReceiptDetailsScreen() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function ReceiptDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const { theme } = useTheme();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     loadReceipt();
@@ -34,7 +36,7 @@ export default function ReceiptDetailsScreen() {
       const receiptData = await getReceiptById(id as string);
       
       if (!receiptData) {
-        Alert.alert('Error', 'Receipt not found');
+        Alert.alert(t.error, t.receiptNotFound);
         router.back();
         return;
       }
@@ -63,7 +65,7 @@ export default function ReceiptDetailsScreen() {
       setReceipt(normalizedReceipt);
     } catch (error) {
       console.error('Error loading receipt:', error);
-      Alert.alert('Error', 'Failed to load receipt details');
+      Alert.alert(t.error, language === 'fr' ? 'Impossible de charger les détails du reçu' : 'Failed to load receipt details');
       router.back();
     } finally {
       setLoading(false);
@@ -81,7 +83,7 @@ export default function ReceiptDetailsScreen() {
 
   const getCategoryName = (categoryId: string): string => {
     const category = categories.find((cat: Category) => cat.id === categoryId);
-    return category?.name || 'Non catégorisé';
+    return category?.name || (language === 'fr' ? 'Non catégorisé' : 'Uncategorized');
   };
 
   const getCategoryColor = (categoryId: string): string => {
@@ -91,15 +93,15 @@ export default function ReceiptDetailsScreen() {
 
   const handleDelete = async () => {
     Alert.alert(
-      'Delete Receipt',
-      'Are you sure you want to delete this receipt? This action cannot be undone.',
+      language === 'fr' ? 'Supprimer le reçu' : 'Delete Receipt',
+      t.deleteConfirmMessage,
       [
         {
-          text: 'Cancel',
+          text: t.cancel,
           style: 'cancel',
         },
         {
-          text: 'Delete',
+          text: t.delete,
           style: 'destructive',
           onPress: async () => {
             try {
@@ -108,7 +110,7 @@ export default function ReceiptDetailsScreen() {
               router.replace('/');
             } catch (error) {
               console.error('Error deleting receipt:', error);
-              Alert.alert('Error', 'Failed to delete receipt');
+              Alert.alert(t.error, language === 'fr' ? 'Impossible de supprimer le reçu' : 'Failed to delete receipt');
             }
           },
         },
@@ -137,7 +139,7 @@ export default function ReceiptDetailsScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <Text style={[styles.loadingText, { color: theme.text }]}>Chargement...</Text>
+        <Text style={[styles.loadingText, { color: theme.text }]}>{t.loading}</Text>
       </View>
     );
   }
@@ -145,7 +147,7 @@ export default function ReceiptDetailsScreen() {
   if (!receipt) {
     return (
       <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
-        <Text style={[styles.errorText, { color: theme.error }]}>Reçu non trouvé</Text>
+        <Text style={[styles.errorText, { color: theme.error }]}>{t.receiptNotFound}</Text>
       </View>
     );
   }
@@ -153,23 +155,23 @@ export default function ReceiptDetailsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <HeaderBar 
-        title="Détails du reçu" 
+        title={t.receiptDetails} 
         showBackButton
       />
       
       <ScrollView style={styles.content}>
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Date</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>{t.date}</Text>
           <Text style={[styles.value, { color: theme.text }]}>{formatDate(receipt.date)}</Text>
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Magasin</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>{t.store}</Text>
           <Text style={[styles.value, { color: theme.text }]}>{receipt.company}</Text>
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Catégorie</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>{t.category}</Text>
           <View style={styles.categoryTag}>
             <Text style={[styles.categoryText, { color: theme.text }]}>
               {getCategoryName(receipt.category)}
@@ -178,7 +180,7 @@ export default function ReceiptDetailsScreen() {
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>Articles</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>{t.items}</Text>
           {receipt.items.map((item) => (
             <View key={item.id} style={styles.productItem}>
               <View style={styles.productInfo}>
@@ -194,19 +196,19 @@ export default function ReceiptDetailsScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.card }]}>
           <View style={styles.totalLine}>
-            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>Sous-total</Text>
+            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>{t.subtotal}</Text>
             <Text style={[styles.totalValue, { color: theme.text }]}>{formatCurrency(receipt.subtotal, receipt.currency)}</Text>
           </View>
           <View style={styles.totalLine}>
-            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>TPS (5%)</Text>
+            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>{t.tps}</Text>
             <Text style={[styles.totalValue, { color: theme.text }]}>{formatCurrency(receipt.taxes.tps || 0, receipt.currency)}</Text>
           </View>
           <View style={styles.totalLine}>
-            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>TVQ (9.975%)</Text>
+            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>{t.tvq}</Text>
             <Text style={[styles.totalValue, { color: theme.text }]}>{formatCurrency(receipt.taxes.tvq || 0, receipt.currency)}</Text>
           </View>
           <View style={[styles.totalLine, styles.finalTotal]}>
-            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>Total</Text>
+            <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>{t.total}</Text>
             <Text style={[styles.finalTotalValue, { color: theme.text }]}>{formatCurrency(receipt.totalAmount, receipt.currency)}</Text>
           </View>
         </View>
@@ -217,7 +219,7 @@ export default function ReceiptDetailsScreen() {
             onPress={handleEdit}
           >
             <Edit2 size={24} color={theme.accent} />
-            <Text style={[styles.actionButtonText, { color: theme.accent }]}>Modifier</Text>
+            <Text style={[styles.actionButtonText, { color: theme.accent }]}>{t.modify}</Text>
           </TouchableOpacity>
 
           {receipt.metadata?.originalText && (
@@ -226,7 +228,7 @@ export default function ReceiptDetailsScreen() {
               onPress={handleViewImage}
             >
               <ImageIcon size={24} color="#4CAF50" />
-              <Text style={styles.imageButtonText}>Voir l'image</Text>
+              <Text style={styles.imageButtonText}>{t.viewImage}</Text>
             </TouchableOpacity>
           )}
 
@@ -235,7 +237,7 @@ export default function ReceiptDetailsScreen() {
             onPress={handleDelete}
           >
             <Trash2 size={24} color={theme.error} />
-            <Text style={[styles.actionButtonText, { color: theme.error }]}>Supprimer</Text>
+            <Text style={[styles.actionButtonText, { color: theme.error }]}>{t.delete}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

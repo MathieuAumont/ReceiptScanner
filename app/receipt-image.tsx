@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import HeaderBar from '@/app/components/HeaderBar';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 export default function ReceiptImageScreen() {
   const { imageUri } = useLocalSearchParams();
+  const { language } = useLanguage();
 
   return (
     <View style={styles.container}>
-      <HeaderBar title="Photo du reçu" showBackButton />
+      <HeaderBar title={language === 'fr' ? 'Photo du reçu' : 'Receipt Photo'} showBackButton />
       <View style={styles.imageContainer}>
         <Image
           source={{ uri: imageUri as string }}
@@ -34,4 +36,4 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-}); 
+});

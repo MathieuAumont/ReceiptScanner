@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from '@/app/lib/formatting';
 import { ShoppingBag } from 'lucide-react-native';
 import { getAllCategories } from '@/app/lib/storage';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 interface ReceiptCardProps {
   receipt: Receipt;
@@ -15,6 +16,7 @@ interface ReceiptCardProps {
 export default function ReceiptCard({ receipt, onPress }: ReceiptCardProps) {
   const router = useRouter();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export default function ReceiptCard({ receipt, onPress }: ReceiptCardProps) {
 
   const getCategoryName = (categoryId: string): string => {
     const category = categories.find((cat: Category) => cat.id === categoryId);
-    return category?.name || 'Non catégorisé';
+    return category?.name || (t.language === 'fr' ? 'Non catégorisé' : 'Uncategorized');
   };
 
   const getCategoryColor = (categoryId: string): string => {
@@ -151,4 +153,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-}); 
+});

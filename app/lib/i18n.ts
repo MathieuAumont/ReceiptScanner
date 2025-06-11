@@ -20,6 +20,7 @@ export interface Translations {
   date: string;
   amount: string;
   category: string;
+  language: string;
   
   // Home Screen
   receiptScanner: string;
@@ -90,7 +91,6 @@ export interface Translations {
   preferences: string;
   darkMode: string;
   notifications: string;
-  language: string;
   dataManagement: string;
   storageUsed: string;
   exportData: string;
@@ -105,7 +105,6 @@ export interface Translations {
   transport: string;
   entertainment: string;
   health: string;
-  home: string;
   
   // Help & Support
   helpSupportTitle: string;
@@ -136,7 +135,6 @@ export interface Translations {
   spendingAnalysis: string;
   askQuestion: string;
   examples: string;
-  analyzing: string;
   
   // Months
   january: string;
@@ -176,6 +174,7 @@ export const translations: { [key: string]: Translations } = {
     date: 'Date',
     amount: 'Montant',
     category: 'Catégorie',
+    language: 'Langue',
     
     // Home Screen
     receiptScanner: 'Receipt Scanner',
@@ -246,7 +245,6 @@ export const translations: { [key: string]: Translations } = {
     preferences: 'Préférences',
     darkMode: 'Mode sombre',
     notifications: 'Notifications',
-    language: 'Langue',
     dataManagement: 'Gestion des données',
     storageUsed: 'Stockage utilisé',
     exportData: 'Exporter les données',
@@ -261,7 +259,6 @@ export const translations: { [key: string]: Translations } = {
     transport: 'Transport',
     entertainment: 'Loisirs',
     health: 'Santé',
-    home: 'Maison',
     
     // Help & Support
     helpSupportTitle: 'Aide et Support',
@@ -292,7 +289,6 @@ export const translations: { [key: string]: Translations } = {
     spendingAnalysis: 'Analyse des dépenses',
     askQuestion: 'Posez une question sur vos dépenses',
     examples: 'Exemples :',
-    analyzing: 'Analyse en cours...',
     
     // Months
     january: 'janvier',
@@ -331,6 +327,7 @@ export const translations: { [key: string]: Translations } = {
     date: 'Date',
     amount: 'Amount',
     category: 'Category',
+    language: 'Language',
     
     // Home Screen
     receiptScanner: 'Receipt Scanner',
@@ -401,7 +398,6 @@ export const translations: { [key: string]: Translations } = {
     preferences: 'Preferences',
     darkMode: 'Dark Mode',
     notifications: 'Notifications',
-    language: 'Language',
     dataManagement: 'Data Management',
     storageUsed: 'Storage Used',
     exportData: 'Export Data',
@@ -416,7 +412,6 @@ export const translations: { [key: string]: Translations } = {
     transport: 'Transport',
     entertainment: 'Entertainment',
     health: 'Health',
-    home: 'Home',
     
     // Help & Support
     helpSupportTitle: 'Help & Support',
@@ -447,7 +442,6 @@ export const translations: { [key: string]: Translations } = {
     spendingAnalysis: 'Spending Analysis',
     askQuestion: 'Ask a question about your spending',
     examples: 'Examples:',
-    analyzing: 'Analyzing...',
     
     // Months
     january: 'January',

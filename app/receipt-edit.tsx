@@ -5,6 +5,8 @@ import HeaderBar from '@/app/components/HeaderBar';
 import ReceiptForm from '@/app/components/ReceiptForm';
 import { getReceiptById, updateReceipt, getAllCategories } from '@/app/lib/storage';
 import { Receipt, Category } from '@/app/lib/types';
+import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 export default function ReceiptEditScreen() {
   const router = useRouter();
@@ -12,6 +14,8 @@ export default function ReceiptEditScreen() {
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     loadReceipt();
@@ -29,7 +33,7 @@ export default function ReceiptEditScreen() {
       const receiptData = await getReceiptById(id as string);
       
       if (!receiptData) {
-        Alert.alert('Erreur', 'Reçu non trouvé');
+        Alert.alert(t.error, t.receiptNotFound);
         router.back();
         return;
       }
@@ -37,7 +41,7 @@ export default function ReceiptEditScreen() {
       setReceipt(receiptData);
     } catch (error) {
       console.error('Error loading receipt:', error);
-      Alert.alert('Erreur', 'Impossible de charger le reçu');
+      Alert.alert(t.error, language === 'fr' ? 'Impossible de charger le reçu' : 'Unable to load receipt');
       router.back();
     } finally {
       setLoading(false);
@@ -50,7 +54,7 @@ export default function ReceiptEditScreen() {
       setCategories(loadedCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
-      Alert.alert('Erreur', 'Impossible de charger les catégories');
+      Alert.alert(t.error, language === 'fr' ? 'Impossible de charger les catégories' : 'Unable to load categories');
     }
   };
 
@@ -64,24 +68,24 @@ export default function ReceiptEditScreen() {
       router.back();
     } catch (error) {
       console.error('Error updating receipt:', error);
-      Alert.alert('Erreur', 'Impossible de mettre à jour le reçu');
+      Alert.alert(t.error, language === 'fr' ? 'Impossible de mettre à jour le reçu' : 'Unable to update receipt');
     }
   };
 
   if (loading || !receipt) {
     return (
-      <View style={styles.container}>
-        <HeaderBar title="Modifier le reçu" showBackButton />
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <HeaderBar title={language === 'fr' ? 'Modifier le reçu' : 'Edit Receipt'} showBackButton />
         <View style={styles.loadingContainer}>
-          <Text>Chargement...</Text>
+          <Text style={[styles.loadingText, { color: theme.text }]}>{t.loading}</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <HeaderBar title="Modifier le reçu" showBackButton />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <HeaderBar title={language === 'fr' ? 'Modifier le reçu' : 'Edit Receipt'} showBackButton />
       <View style={styles.formContainer}>
         <ReceiptForm
           initialReceipt={receipt}
@@ -97,14 +101,16 @@ export default function ReceiptEditScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    fontSize: 16,
+  },
   formContainer: {
     flex: 1,
   },
-}); 
+});

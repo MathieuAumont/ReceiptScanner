@@ -7,6 +7,8 @@ import { Receipt, Category } from '@/app/lib/types';
 import { saveReceipt, updateReceipt, getAllCategories } from '@/app/lib/storage';
 import { generateId } from '@/app/lib/helpers';
 import { defaultCategories } from '@/app/lib/categories';
+import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 function base64Decode(str: string): string {
   try {
@@ -49,7 +51,6 @@ interface RawReceipt {
 }
 
 function parseReceipt(data: RawReceipt): Receipt {
-  // Utiliser items s'il existe, sinon products, sinon un tableau vide
   const products = data.items || data.products || [];
   
   return {
@@ -78,9 +79,10 @@ export default function ReceiptConfirmationScreen() {
   const params = useLocalSearchParams();
   const isEdit = params?.mode === 'edit';
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const { theme } = useTheme();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
-    // Charger les catégories au montage
     const loadCategories = async () => {
       try {
         const savedCategories = await getAllCategories();
@@ -130,20 +132,21 @@ export default function ReceiptConfirmationScreen() {
     }
   };
 
-  // Debug log
   console.log('Current params:', params);
   console.log('Current receipt state:', receipt);
 
   if (!receipt) {
     return (
-      <View style={styles.container}>
-        <Text>Aucun reçu à afficher</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.noReceiptText, { color: theme.text }]}>
+          {language === 'fr' ? 'Aucun reçu à afficher' : 'No receipt to display'}
+        </Text>
         <Button 
           mode="contained" 
           onPress={() => router.replace('/')}
           style={styles.saveButton}
         >
-          Retour
+          {t.back}
         </Button>
       </View>
     );
@@ -152,7 +155,7 @@ export default function ReceiptConfirmationScreen() {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
       <View style={styles.content}>
@@ -170,7 +173,6 @@ export default function ReceiptConfirmationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -179,12 +181,12 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
-  errorText: {
-    color: 'red',
-    margin: 16,
+  noReceiptText: {
+    fontSize: 16,
+    marginBottom: 20,
   },
   saveButton: {
     marginTop: 16,
     marginBottom: 32,
   }
-}); 
+});

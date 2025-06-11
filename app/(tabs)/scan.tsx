@@ -8,8 +8,12 @@ import { processReceipt } from '@/app/lib/receipt-processing';
 import { generateId, encodeBase64 } from '@/app/lib/helpers';
 import { Receipt } from '@/app/lib/types';
 import { Image as ImageIcon } from 'lucide-react-native';
+import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 export default function ScanScreen() {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const [photo, setPhoto] = useState<string | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
@@ -27,7 +31,7 @@ export default function ScanScreen() {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
-          "Permission requise",
+          t.error,
           "Nous avons besoin de votre permission pour accéder à vos photos.",
           [{ text: "OK" }]
         );
@@ -42,10 +46,14 @@ export default function ScanScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <Text>Permission to access camera is required.</Text>
-        <TouchableOpacity onPress={requestPermission}>
-          <Text>Grant permission</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.permissionText, { color: theme.text }]}>
+          {t.language === 'fr' ? 'Permission d\'accéder à la caméra requise.' : 'Permission to access camera is required.'}
+        </Text>
+        <TouchableOpacity onPress={requestPermission} style={[styles.permissionButton, { backgroundColor: theme.accent }]}>
+          <Text style={styles.permissionButtonText}>
+            {t.language === 'fr' ? 'Accorder la permission' : 'Grant permission'}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -66,16 +74,16 @@ export default function ScanScreen() {
         const receiptResult = await processReceipt(result.assets[0].uri);
         
         if (!receiptResult) {
-          throw new Error("Le traitement du reçu n'a pas retourné de données");
+          throw new Error(t.language === 'fr' ? "Le traitement du reçu n'a pas retourné de données" : "Receipt processing did not return data");
         }
 
         if (!receiptResult.totalAmount && receiptResult.totalAmount !== 0) {
-          throw new Error("Le montant total n'a pas pu être extrait du reçu");
+          throw new Error(t.language === 'fr' ? "Le montant total n'a pas pu être extrait du reçu" : "Total amount could not be extracted from receipt");
         }
 
         const safeReceiptData = {
           id: receiptResult.id || generateId(),
-          company: receiptResult.company || "Entreprise inconnue",
+          company: receiptResult.company || (t.language === 'fr' ? "Entreprise inconnue" : "Unknown company"),
           date: receiptResult.date || new Date().toISOString(),
           totalAmount: receiptResult.totalAmount || 0,
           subtotal: receiptResult.subtotal || 0,
@@ -85,7 +93,7 @@ export default function ScanScreen() {
           },
           items: (receiptResult.items || []).map(item => ({
             id: item.id || generateId(),
-            name: item.name || "Article inconnu",
+            name: item.name || (t.language === 'fr' ? "Article inconnu" : "Unknown item"),
             price: Number(item.price) || 0,
             quantity: Number(item.quantity) || 1
           })),
@@ -111,7 +119,7 @@ export default function ScanScreen() {
       }
     } catch (err) {
       console.error('Error picking image:', err);
-      setError(err instanceof Error ? err.message : 'Erreur lors du traitement de l\'image');
+      setError(err instanceof Error ? err.message : t.language === 'fr' ? 'Erreur lors du traitement de l\'image' : 'Error processing image');
     } finally {
       setIsAnalyzing(false);
     }
@@ -119,7 +127,7 @@ export default function ScanScreen() {
 
   const takePicture = async () => {
     if (!isCameraReady || !cameraRef.current) {
-      setError("Camera is not ready yet");
+      setError(t.language === 'fr' ? "La caméra n'est pas encore prête" : "Camera is not ready yet");
       return;
     }
 
@@ -144,7 +152,7 @@ export default function ScanScreen() {
       }
     } catch (err) {
       console.error('Error taking picture:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process receipt');
+      setError(err instanceof Error ? err.message : t.language === 'fr' ? 'Échec du traitement du reçu' : 'Failed to process receipt');
     } finally {
       setIsAnalyzing(false);
     }
@@ -162,7 +170,7 @@ export default function ScanScreen() {
         }}
         onMountError={(error) => {
           console.error('Camera mount error:', error);
-          setError('Failed to initialize camera');
+          setError(t.language === 'fr' ? 'Échec de l\'initialisation de la caméra' : 'Failed to initialize camera');
         }}
       >
         <View style={styles.buttonContainer}>
@@ -174,7 +182,7 @@ export default function ScanScreen() {
             <View style={styles.iconContainer}>
               <ImageIcon size={24} color="#FFFFFF" />
             </View>
-            <Text style={styles.buttonText}>Upload</Text>
+            <Text style={styles.buttonText}>{t.upload}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -192,7 +200,7 @@ export default function ScanScreen() {
         {isAnalyzing && (
           <View style={styles.analyzingOverlay}>
             <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.analyzingText}>Analyzing receipt...</Text>
+            <Text style={styles.analyzingText}>{t.analyzing}</Text>
           </View>
         )}
 
@@ -282,5 +290,21 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#FFFFFF',
     textAlign: 'center',
+  },
+  permissionText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  permissionButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 20,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

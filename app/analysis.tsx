@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 import HeaderBar from '@/app/components/HeaderBar';
 import { analyzeSpendingData } from '@/app/lib/openai';
 import { Send } from 'lucide-react-native';
@@ -9,6 +10,7 @@ import { Stack } from 'expo-router';
 
 export default function AnalysisScreen() {
   const { theme } = useTheme();
+  const { t, language } = useLanguage();
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,9 +26,25 @@ export default function AnalysisScreen() {
       setAnswer(response);
     } catch (err) {
       console.error('Error analyzing data:', err);
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : (language === 'fr' ? 'Une erreur est survenue' : 'An error occurred'));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getExamples = () => {
+    if (language === 'fr') {
+      return [
+        '• Quel est mon total de dépenses ce mois-ci ?',
+        '• Dans quelle catégorie ai-je le plus dépensé ?',
+        '• Comparez mes dépenses des 3 derniers mois'
+      ];
+    } else {
+      return [
+        '• What is my total spending this month?',
+        '• Which category did I spend the most on?',
+        '• Compare my spending over the last 3 months'
+      ];
     }
   };
 
@@ -34,30 +52,26 @@ export default function AnalysisScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Analyse des dépenses',
+          title: t.spendingAnalysis,
           headerShown: false,
         }}
       />
-      <HeaderBar title="Analyse des dépenses" />
+      <HeaderBar title={t.spendingAnalysis} showBackButton />
       
       <ScrollView style={styles.content}>
         <Text style={[styles.title, { color: theme.text }]}>
-          Posez une question sur vos dépenses
+          {t.askQuestion}
         </Text>
         
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Exemples :
+          {t.examples}
         </Text>
         <View style={styles.examplesContainer}>
-          <Text style={[styles.example, { color: theme.textSecondary }]}>
-            • Quel est mon total de dépenses ce mois-ci ?
-          </Text>
-          <Text style={[styles.example, { color: theme.textSecondary }]}>
-            • Dans quelle catégorie ai-je le plus dépensé ?
-          </Text>
-          <Text style={[styles.example, { color: theme.textSecondary }]}>
-            • Comparez mes dépenses des 3 derniers mois
-          </Text>
+          {getExamples().map((example, index) => (
+            <Text key={index} style={[styles.example, { color: theme.textSecondary }]}>
+              {example}
+            </Text>
+          ))}
         </View>
 
         <View style={styles.inputContainer}>
@@ -70,7 +84,7 @@ export default function AnalysisScreen() {
                 borderColor: theme.border,
               },
             ]}
-            placeholder="Posez votre question ici..."
+            placeholder={language === 'fr' ? "Posez votre question ici..." : "Ask your question here..."}
             placeholderTextColor={theme.textSecondary}
             value={question}
             onChangeText={setQuestion}
@@ -93,7 +107,7 @@ export default function AnalysisScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.accent} />
             <Text style={[styles.loadingText, { color: theme.text }]}>
-              Analyse en cours...
+              {t.analyzing}
             </Text>
           </View>
         )}
@@ -191,4 +205,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
   },
-}); 
+});
