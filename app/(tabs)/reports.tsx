@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 import { router } from 'expo-router';
 import HeaderBar from '@/app/components/HeaderBar';
 import PieChartComponent from '@/app/components/PieChartComponent';
@@ -74,6 +75,7 @@ function prepareBarChartData(receipts: Receipt[]): BarChartData[] {
 
 export default function ReportsScreen() {
   const { theme } = useTheme();
+  const { t, language } = useLanguage();
   const [receipts, setReceipts] = React.useState<Receipt[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -86,14 +88,14 @@ export default function ReportsScreen() {
         setReceipts(data);
       } catch (err) {
         console.error('Error loading receipts:', err);
-        setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+        setError(err instanceof Error ? err.message : (language === 'fr' ? 'Une erreur est survenue' : 'An error occurred'));
       } finally {
         setLoading(false);
       }
     };
 
     loadReceipts();
-  }, []);
+  }, [language]);
 
   const handleAnalysisPress = () => {
     router.push('/analysis');
@@ -106,10 +108,10 @@ export default function ReportsScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <HeaderBar title="Rapports" />
+        <HeaderBar title={t.reports} />
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: theme.text }]}>
-            Chargement des données...
+            {t.loading}
           </Text>
         </View>
       </View>
@@ -119,7 +121,7 @@ export default function ReportsScreen() {
   if (error) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <HeaderBar title="Rapports" />
+        <HeaderBar title={t.reports} />
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: theme.error }]}>
             {error}
@@ -135,13 +137,13 @@ export default function ReportsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <HeaderBar title="Rapports" />
+      <HeaderBar title={t.reports} />
       
       {/* Summary Stats */}
       <View style={[styles.summaryContainer, { backgroundColor: theme.card }]}>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
-            Total des dépenses
+            {t.totalExpenses}
           </Text>
           <Text style={[styles.summaryValue, { color: theme.accent }]}>
             {formatCurrency(totalSpent, 'CAD')}
@@ -149,7 +151,7 @@ export default function ReportsScreen() {
         </View>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
-            Nombre de reçus
+            {t.numberOfReceipts}
           </Text>
           <Text style={[styles.summaryValue, { color: theme.text }]}>
             {receipts.length}
@@ -166,8 +168,8 @@ export default function ReportsScreen() {
           <View style={styles.buttonContent}>
             <TrendingUp size={20} color="white" />
             <View style={styles.buttonTextContainer}>
-              <Text style={styles.buttonTitle}>Analyse IA</Text>
-              <Text style={styles.buttonSubtitle}>Insights personnalisés</Text>
+              <Text style={styles.buttonTitle}>{t.aiAnalysis}</Text>
+              <Text style={styles.buttonSubtitle}>{t.personalizedInsights}</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -179,8 +181,8 @@ export default function ReportsScreen() {
           <View style={styles.buttonContent}>
             <Calendar size={20} color="white" />
             <View style={styles.buttonTextContainer}>
-              <Text style={styles.buttonTitle}>Rapport Custom</Text>
-              <Text style={styles.buttonSubtitle}>Période personnalisée</Text>
+              <Text style={styles.buttonTitle}>{t.customReport}</Text>
+              <Text style={styles.buttonSubtitle}>{t.customPeriod}</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -192,7 +194,7 @@ export default function ReportsScreen() {
           <View style={styles.chartHeader}>
             <BarChart3 size={20} color={theme.accent} />
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Répartition par catégorie
+              {t.categoryBreakdown}
             </Text>
           </View>
           
@@ -220,7 +222,7 @@ export default function ReportsScreen() {
           ) : (
             <View style={styles.emptyChart}>
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Aucune donnée disponible
+                {t.noDataAvailable}
               </Text>
             </View>
           )}
@@ -231,7 +233,7 @@ export default function ReportsScreen() {
           <View style={styles.chartHeader}>
             <LineChart size={20} color={theme.accent} />
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Évolution mensuelle
+              {t.monthlyEvolution}
             </Text>
           </View>
           
@@ -242,7 +244,7 @@ export default function ReportsScreen() {
           ) : (
             <View style={styles.emptyChart}>
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Aucune donnée disponible
+                {t.noDataAvailable}
               </Text>
             </View>
           )}

@@ -7,6 +7,7 @@ import { generateId } from '@/app/lib/helpers';
 import { Receipt, Category } from '@/app/lib/types';
 import { saveCustomCategories } from '@/app/lib/storage';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 // Taux de taxes au Québec
 const TPS_RATE = 0.05; // 5%
@@ -55,6 +56,7 @@ export default function ReceiptForm({
   const [focusedInputY, setFocusedInputY] = useState(0);
   const windowHeight = Dimensions.get('window').height;
   const { theme } = useTheme();
+  const { t, language } = useLanguage();
   const [company, setCompany] = useState(initialReceipt?.company || '');
   const [date, setDate] = useState<Date>(() => {
     if (initialReceipt?.date) {
@@ -197,7 +199,7 @@ export default function ReceiptForm({
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un nom pour la catégorie');
+      Alert.alert(t.error, language === 'fr' ? 'Veuillez entrer un nom pour la catégorie' : 'Please enter a category name');
       return;
     }
 
@@ -220,19 +222,19 @@ export default function ReceiptForm({
       await saveCustomCategories(updatedCategories.filter(cat => cat.isCustom));
     } catch (error) {
       console.error('Error saving custom categories:', error);
-      Alert.alert('Erreur', 'Impossible de sauvegarder la catégorie');
+      Alert.alert(t.error, language === 'fr' ? 'Impossible de sauvegarder la catégorie' : 'Unable to save category');
     }
   };
 
   const handleSave = () => {
     // Validation
     if (!company.trim()) {
-      Alert.alert('Information manquante', 'Veuillez entrer le nom du magasin');
+      Alert.alert(language === 'fr' ? 'Information manquante' : 'Missing Information', t.missingStoreName);
       return;
     }
 
     if (items.every(item => !item.name.trim() || item.price === 0)) {
-      Alert.alert('Information manquante', 'Veuillez entrer au moins un article avec un prix');
+      Alert.alert(language === 'fr' ? 'Information manquante' : 'Missing Information', t.missingItems);
       return;
     }
 
@@ -326,7 +328,7 @@ export default function ReceiptForm({
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.formSection, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Informations générales</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.generalInfo}</Text>
           
           <TouchableOpacity 
             style={[styles.datePickerButton, { backgroundColor: theme.background, borderColor: theme.border }]}
@@ -334,7 +336,7 @@ export default function ReceiptForm({
           >
             <Calendar size={20} color={theme.text} />
             <Text style={[styles.dateText, { color: theme.text }]}>
-              {date instanceof Date ? date.toLocaleDateString('fr-CA') : new Date().toLocaleDateString('fr-CA')}
+              {date instanceof Date ? date.toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA') : new Date().toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA')}
             </Text>
           </TouchableOpacity>
 
@@ -350,7 +352,7 @@ export default function ReceiptForm({
           
           <TextInput
             style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginTop: 12 }]}
-            placeholder="Nom du magasin"
+            placeholder={t.storeName}
             placeholderTextColor={theme.textSecondary}
             value={company}
             onChangeText={setCompany}
@@ -399,10 +401,10 @@ export default function ReceiptForm({
         </View>
 
         <View style={[styles.formSection, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Articles</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.items}</Text>
           
           <View style={[styles.taxToggleContainer, { backgroundColor: theme.background }]}>
-            <Text style={[styles.taxToggleLabel, { color: theme.text }]}>Prix incluent les taxes</Text>
+            <Text style={[styles.taxToggleLabel, { color: theme.text }]}>{t.pricesIncludeTax}</Text>
             <Switch
               value={pricesIncludeTax}
               onValueChange={setPricesIncludeTax}
@@ -415,7 +417,7 @@ export default function ReceiptForm({
             <View key={item.id} style={[styles.itemContainer, { backgroundColor: theme.background }]}>
               <TextInput
                 style={[styles.input, styles.itemNameInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                placeholder="Nom de l'article"
+                placeholder={t.itemName}
                 placeholderTextColor={theme.textSecondary}
                 value={item.name}
                 onChangeText={(value) => updateItem(item.id, 'name', value)}
@@ -426,7 +428,7 @@ export default function ReceiptForm({
               
               <TextInput
                 style={[styles.input, styles.itemPriceInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                placeholder="Prix"
+                placeholder={t.price}
                 placeholderTextColor={theme.textSecondary}
                 value={item.price === 0 ? '' : item.price.toString()}
                 onChangeText={(value) => updateItem(item.id, 'price', value)}
@@ -438,7 +440,7 @@ export default function ReceiptForm({
               
               <TextInput
                 style={[styles.input, styles.itemQuantityInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                placeholder="Qté"
+                placeholder={t.quantity}
                 placeholderTextColor={theme.textSecondary}
                 value={item.quantity.toString()}
                 onChangeText={(value) => updateItem(item.id, 'quantity', value)}
@@ -466,30 +468,30 @@ export default function ReceiptForm({
             style={[styles.addItemButton, { backgroundColor: theme.background, borderColor: theme.border }]} 
             onPress={addItem}
           >
-            <Text style={[styles.addItemText, { color: theme.accent }]}>Ajouter un article</Text>
+            <Text style={[styles.addItemText, { color: theme.accent }]}>{t.addItem}</Text>
           </TouchableOpacity>
         </View>
         
         <View style={[styles.formSection, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Résumé</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.summary}</Text>
           
           <View style={[styles.totalContainer, { backgroundColor: theme.background }]}>
-            <Text style={[styles.totalLabel, { color: theme.text }]}>Sous-total:</Text>
+            <Text style={[styles.totalLabel, { color: theme.text }]}>{t.subtotal}:</Text>
             <Text style={[styles.totalAmount, { color: theme.text }]}>${calculateSubtotal().toFixed(2)}</Text>
           </View>
           
           <View style={[styles.totalContainer, { backgroundColor: theme.background }]}>
-            <Text style={[styles.totalLabel, { color: theme.text }]}>TPS (5%):</Text>
+            <Text style={[styles.totalLabel, { color: theme.text }]}>{t.tps}:</Text>
             <Text style={[styles.totalAmount, { color: theme.text }]}>${tps.toFixed(2)}</Text>
           </View>
           
           <View style={[styles.totalContainer, { backgroundColor: theme.background }]}>
-            <Text style={[styles.totalLabel, { color: theme.text }]}>TVQ (9.975%):</Text>
+            <Text style={[styles.totalLabel, { color: theme.text }]}>{t.tvq}:</Text>
             <Text style={[styles.totalAmount, { color: theme.text }]}>${tvq.toFixed(2)}</Text>
           </View>
           
           <View style={[styles.totalContainer, styles.grandTotal, { backgroundColor: theme.background }]}>
-            <Text style={[styles.totalLabel, styles.grandTotalLabel, { color: theme.text }]}>Total:</Text>
+            <Text style={[styles.totalLabel, styles.grandTotalLabel, { color: theme.text }]}>{t.total}:</Text>
             <Text style={[styles.totalAmount, styles.grandTotalAmount, { color: theme.text }]}>
               ${calculateTotal().toFixed(2)}
             </Text>
@@ -501,13 +503,13 @@ export default function ReceiptForm({
             style={[styles.resetButton, { backgroundColor: '#B71C1C' }]}
             onPress={handleResetButtonPress}
           >
-            <Text style={[styles.resetButtonText, { color: '#FFFFFF' }]}>Réinitialiser</Text>
+            <Text style={[styles.resetButtonText, { color: '#FFFFFF' }]}>{t.reset}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.saveButton, { backgroundColor: theme.accent }]}
             onPress={handleSave}
           >
-            <Text style={[styles.buttonText, { color: theme.card }]}>Sauvegarder</Text>
+            <Text style={[styles.buttonText, { color: theme.card }]}>{t.save}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -518,18 +520,22 @@ export default function ReceiptForm({
           onDismiss={() => setShowCategoryModal(false)}
           contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.card }]}
         >
-          <Text style={[styles.modalTitle, { color: theme.text }]}>Nouvelle catégorie</Text>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>
+            {language === 'fr' ? 'Nouvelle catégorie' : 'New Category'}
+          </Text>
           
           <TextInput
             style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-            placeholder="Nom de la catégorie"
+            placeholder={language === 'fr' ? 'Nom de la catégorie' : 'Category name'}
             placeholderTextColor={theme.textSecondary}
             value={newCategoryName}
             onChangeText={setNewCategoryName}
           />
 
           <View style={[styles.colorPickerContainer, { backgroundColor: theme.background }]}>
-            <Text style={[styles.colorLabel, { color: theme.text }]}>Couleur</Text>
+            <Text style={[styles.colorLabel, { color: theme.text }]}>
+              {language === 'fr' ? 'Couleur' : 'Color'}
+            </Text>
             <View style={[styles.colorGrid, { backgroundColor: theme.background }]}>
               {PRESET_COLORS.map((color) => (
                 <TouchableOpacity
@@ -555,7 +561,7 @@ export default function ReceiptForm({
               style={[styles.button, { borderColor: theme.error }]}
               textColor={theme.error}
             >
-              Annuler
+              {t.cancel}
             </Button>
             <Button 
               mode="contained" 
@@ -563,7 +569,7 @@ export default function ReceiptForm({
               style={[styles.button, { backgroundColor: theme.accent }]}
               disabled={!newCategoryName.trim()}
             >
-              Ajouter
+              {language === 'fr' ? 'Ajouter' : 'Add'}
             </Button>
           </View>
         </Modal>

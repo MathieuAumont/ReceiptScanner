@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Category } from '@/app/lib/types';
 import { getAllCategories, getReceipts } from '@/app/lib/storage';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 import HeaderBar from '@/app/components/HeaderBar';
 import { formatCurrency } from '@/app/lib/formatting';
 import { TrendingUp, TrendingDown, TriangleAlert as AlertTriangle, ChevronLeft, ChevronRight, Calendar } from 'lucide-react-native';
@@ -26,6 +27,7 @@ interface CategorySpending {
 export default function BudgetScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { t, language } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentBudget, setCurrentBudget] = useState<BudgetItem[]>([]);
   const [categorySpending, setCategorySpending] = useState<CategorySpending[]>([]);
@@ -141,11 +143,11 @@ export default function BudgetScreen() {
         JSON.stringify(currentBudget)
       );
       setIsEditing(false);
-      Alert.alert('Succès', 'Budget sauvegardé avec succès');
+      Alert.alert(t.success, t.budgetSaved);
       calculateSpending();
     } catch (error) {
       console.error('Error saving budget:', error);
-      Alert.alert('Erreur', 'Impossible de sauvegarder le budget');
+      Alert.alert(t.error, language === 'fr' ? 'Impossible de sauvegarder le budget' : 'Unable to save budget');
     }
   };
 
@@ -191,18 +193,9 @@ export default function BudgetScreen() {
   const formatMonth = (dateString: string) => {
     const [year, month] = dateString.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return date.toLocaleDateString('fr-CA', {
+    return date.toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', {
       year: 'numeric',
       month: 'long'
-    });
-  };
-
-  const formatMonthShort = (dateString: string) => {
-    const [year, month] = dateString.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return date.toLocaleDateString('fr-CA', {
-      month: 'short',
-      year: '2-digit'
     });
   };
 
@@ -247,7 +240,7 @@ export default function BudgetScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <HeaderBar title="Budget" />
+      <HeaderBar title={t.budget} />
 
       {/* Elegant Month Selector */}
       <View style={[styles.monthSelector, { backgroundColor: theme.card }]}>
@@ -265,12 +258,12 @@ export default function BudgetScreen() {
           </Text>
           {isCurrentMonth() && (
             <View style={[styles.currentBadge, { backgroundColor: theme.accent }]}>
-              <Text style={styles.currentBadgeText}>Actuel</Text>
+              <Text style={styles.currentBadgeText}>{t.currentMonth}</Text>
             </View>
           )}
           {isFutureMonth() && (
             <View style={[styles.futureBadge, { backgroundColor: '#9C27B0' }]}>
-              <Text style={styles.futureBadgeText}>Planifié</Text>
+              <Text style={styles.futureBadgeText}>{t.planned}</Text>
             </View>
           )}
         </View>
@@ -286,7 +279,7 @@ export default function BudgetScreen() {
       {/* Budget Total Section with Different Background */}
       <View style={[styles.totalBudgetSection, { backgroundColor: '#F8F9FA' }]}>
         <Text style={[styles.totalBudgetLabel, { color: '#6C757D' }]}>
-          Budget Total du Mois
+          {t.totalBudgetMonth}
         </Text>
         <View style={styles.totalBudgetRow}>
           <View style={styles.totalAmounts}>
@@ -388,7 +381,7 @@ export default function BudgetScreen() {
                   styles.remainingText, 
                   { color: categoryData.budgeted - categoryData.spent >= 0 ? '#4CAF50' : theme.error }
                 ]}>
-                  Restant: {formatCurrency(categoryData.budgeted - categoryData.spent, 'CAD')}
+                  {t.remaining}: {formatCurrency(categoryData.budgeted - categoryData.spent, 'CAD')}
                 </Text>
               )}
             </View>
@@ -410,13 +403,13 @@ export default function BudgetScreen() {
                 loadBudget();
               }}
             >
-              <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Annuler</Text>
+              <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>{t.cancel}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.button, styles.saveButton, { backgroundColor: theme.accent }]} 
               onPress={saveBudget}
             >
-              <Text style={styles.saveButtonText}>Sauvegarder Budget</Text>
+              <Text style={styles.saveButtonText}>{t.saveBudget}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -424,7 +417,7 @@ export default function BudgetScreen() {
             style={[styles.button, styles.editButton, { backgroundColor: '#4CAF50' }]}
             onPress={() => setIsEditing(true)}
           >
-            <Text style={styles.editButtonText}>Modifier Budget</Text>
+            <Text style={styles.editButtonText}>{t.modifyBudget}</Text>
           </TouchableOpacity>
         )}
       </View>

@@ -6,11 +6,13 @@ import { saveReceipt, getAllCategories } from '@/app/lib/storage';
 import { defaultCategories } from '@/app/lib/categories';
 import ReceiptForm from '@/app/components/ReceiptForm';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 export default function ManualEntryScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { theme } = useTheme();
+  const { t, language } = useLanguage();
   const [showSuccess, setShowSuccess] = useState(false);
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
   const [key, setKey] = useState(0);
@@ -54,7 +56,7 @@ export default function ManualEntryScreen() {
       }, 1500);
     } catch (error) {
       console.error('Error saving receipt:', error);
-      Alert.alert('Erreur', 'Impossible de sauvegarder le reçu');
+      Alert.alert(t.error, t.errorSavingReceipt);
     }
   };
 
@@ -63,7 +65,7 @@ export default function ManualEntryScreen() {
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         {showSuccess && (
           <View style={styles.successMessage}>
-            <Text style={styles.successText}>Reçu sauvegardé avec succès!</Text>
+            <Text style={styles.successText}>{t.receiptSavedSuccessfully}</Text>
           </View>
         )}
         <View style={styles.formContainer}>
