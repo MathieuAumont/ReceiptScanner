@@ -11,12 +11,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { Portal } from 'react-native-paper'
 import { useFrameworkReady } from '@/hooks/useFrameworkReady'
 
-function useFrameworkReady() {
-  useEffect(() => {
-    SplashScreen.preventAutoHideAsync();
-  }, []);
-}
-
 function AppContent() {
   const { theme, isDarkMode } = useTheme();
   
