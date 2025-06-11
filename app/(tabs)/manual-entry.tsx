@@ -5,10 +5,12 @@ import { Receipt, Category } from '@/app/lib/types';
 import { saveReceipt, getAllCategories } from '@/app/lib/storage';
 import { defaultCategories } from '@/app/lib/categories';
 import ReceiptForm from '@/app/components/ReceiptForm';
+import { useTheme } from '@/app/themes/ThemeContext';
 
 export default function ManualEntryScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const { theme } = useTheme();
   const [showSuccess, setShowSuccess] = useState(false);
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
   const [key, setKey] = useState(0);
@@ -57,8 +59,8 @@ export default function ManualEntryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         {showSuccess && (
           <View style={styles.successMessage}>
             <Text style={styles.successText}>Reçu sauvegardé avec succès!</Text>
@@ -81,7 +83,6 @@ export default function ManualEntryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
     paddingTop: Platform.OS === 'ios' ? 47 : StatusBar.currentHeight || 0,
   },
   container: {
