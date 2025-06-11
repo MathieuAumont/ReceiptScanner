@@ -254,7 +254,7 @@ export const translations: { [key: string]: Translations } = {
     version: 'Version',
     
     // Categories
-    shopping: 'Shopping',
+    shopping: 'Magasinage',
     food: 'Alimentation',
     transport: 'Transport',
     entertainment: 'Loisirs',
