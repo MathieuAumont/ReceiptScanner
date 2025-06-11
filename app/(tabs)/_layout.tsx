@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { Home, Camera, Plus, ChartBar as BarChart, Settings, Wallet } from 'lucide-react-native';
+import { Chrome as Home, Camera, Plus, ChartBar as BarChart, Settings, Wallet } from 'lucide-react-native';
 import { useTheme } from '@/app/themes/ThemeContext';
 import { useLanguage } from '@/app/contexts/LanguageContext';
 
