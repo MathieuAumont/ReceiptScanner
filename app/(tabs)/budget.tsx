@@ -159,20 +159,38 @@ export default function BudgetScreen() {
     );
   };
 
+  // Fixed month navigation functions
   const selectPreviousMonth = () => {
-    const date = new Date(selectedMonth + '-01');
-    date.setMonth(date.getMonth() - 1);
-    setSelectedMonth(date.toISOString().slice(0, 7));
+    const [year, month] = selectedMonth.split('-').map(Number);
+    let newYear = year;
+    let newMonth = month - 1;
+    
+    if (newMonth < 1) {
+      newMonth = 12;
+      newYear = year - 1;
+    }
+    
+    const newMonthString = `${newYear}-${String(newMonth).padStart(2, '0')}`;
+    setSelectedMonth(newMonthString);
   };
 
   const selectNextMonth = () => {
-    const date = new Date(selectedMonth + '-01');
-    date.setMonth(date.getMonth() + 1);
-    setSelectedMonth(date.toISOString().slice(0, 7));
+    const [year, month] = selectedMonth.split('-').map(Number);
+    let newYear = year;
+    let newMonth = month + 1;
+    
+    if (newMonth > 12) {
+      newMonth = 1;
+      newYear = year + 1;
+    }
+    
+    const newMonthString = `${newYear}-${String(newMonth).padStart(2, '0')}`;
+    setSelectedMonth(newMonthString);
   };
 
   const formatMonth = (dateString: string) => {
-    const date = new Date(dateString + '-01');
+    const [year, month] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
     return date.toLocaleDateString('fr-CA', {
       year: 'numeric',
       month: 'long'
@@ -180,7 +198,8 @@ export default function BudgetScreen() {
   };
 
   const formatMonthShort = (dateString: string) => {
-    const date = new Date(dateString + '-01');
+    const [year, month] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
     return date.toLocaleDateString('fr-CA', {
       month: 'short',
       year: '2-digit'
