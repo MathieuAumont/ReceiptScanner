@@ -11,7 +11,7 @@ import PieChartComponent from '@/app/components/PieChartComponent';
 import BarChartComponent from '@/app/components/BarChartComponent';
 import { Stack } from 'expo-router';
 import { formatCurrency } from '@/app/lib/formatting';
-import { Calendar, Filter, TrendingUp, PieChart } from 'lucide-react-native';
+import { Calendar, Filter, TrendingUp, ChartPie as PieChart } from 'lucide-react-native';
 
 interface PieChartData {
   id: string;
