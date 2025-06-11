@@ -2,9 +2,11 @@ import { Tabs } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { Home, Camera, Plus, ChartBar as BarChart, Settings, Wallet } from 'lucide-react-native';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 export default function TabLayout() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <Tabs
@@ -22,7 +24,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: t.home,
           tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} />
           ),
@@ -31,7 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="scan"
         options={{
-          title: 'Scan',
+          title: t.scan,
           tabBarIcon: ({ color, size }) => (
             <View style={[styles.scanTab, { backgroundColor: theme.accent }]}>
               <Camera size={size} color="white" />
@@ -42,7 +44,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="manual-entry"
         options={{
-          title: 'Add',
+          title: t.manualEntry,
           tabBarIcon: ({ color, size }) => (
             <Plus size={size} color={color} />
           ),
@@ -51,7 +53,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="budget"
         options={{
-          title: 'Budget',
+          title: t.budget,
           tabBarIcon: ({ color, size }) => (
             <Wallet size={size} color={color} />
           ),
@@ -60,7 +62,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="reports"
         options={{
-          title: 'Reports',
+          title: t.reports,
           tabBarIcon: ({ color, size }) => (
             <BarChart size={size} color={color} />
           ),
@@ -69,7 +71,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t.settings,
           tabBarIcon: ({ color, size }) => (
             <Settings size={size} color={color} />
           ),

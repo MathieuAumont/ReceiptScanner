@@ -1,24 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
-import { Database, Trash2, CircleHelp as HelpCircle, FileText, Moon, Bell, Share2, Info, ChevronRight } from 'lucide-react-native';
+import { Database, Trash2, CircleHelp as HelpCircle, FileText, Moon, Bell, Share2, Info, ChevronRight, Globe } from 'lucide-react-native';
 import HeaderBar from '@/app/components/HeaderBar';
 import { clearAllData, exportData, getStorageSize } from '@/app/lib/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 import { router } from 'expo-router';
 
 export default function SettingsScreen() {
   const { isDarkMode, toggleTheme, theme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const [storageUsed, setStorageUsed] = useState('0 KB');
   const [notifications, setNotifications] = useState(true);
   
   useEffect(() => {
-    // Get storage size on component mount
     getStorageSize().then(size => {
       setStorageUsed(size);
     });
-
-    // Load saved settings
     loadSettings();
   }, []);
 
@@ -47,24 +46,26 @@ export default function SettingsScreen() {
 
   const handleClearData = () => {
     Alert.alert(
-      'Clear All Data',
-      'Are you sure you want to delete all receipts and settings? This action cannot be undone.',
+      t.confirmDelete,
+      language === 'fr' 
+        ? 'Êtes-vous sûr de vouloir supprimer tous les reçus et paramètres ? Cette action ne peut pas être annulée.'
+        : 'Are you sure you want to delete all receipts and settings? This action cannot be undone.',
       [
         {
-          text: 'Cancel',
+          text: t.cancel,
           style: 'cancel',
         },
         {
-          text: 'Delete',
+          text: t.delete,
           style: 'destructive',
           onPress: async () => {
             try {
               await clearAllData();
-              Alert.alert('Success', 'All data has been cleared');
+              Alert.alert(t.success, language === 'fr' ? 'Toutes les données ont été effacées' : 'All data has been cleared');
               setStorageUsed('0 KB');
             } catch (error) {
               console.error('Error clearing data:', error);
-              Alert.alert('Error', 'Failed to clear data');
+              Alert.alert(t.error, language === 'fr' ? 'Impossible d\'effacer les données' : 'Failed to clear data');
             }
           },
         },
@@ -76,11 +77,11 @@ export default function SettingsScreen() {
     try {
       const exported = await exportData();
       if (exported) {
-        Alert.alert('Success', 'Data exported successfully');
+        Alert.alert(t.success, language === 'fr' ? 'Données exportées avec succès' : 'Data exported successfully');
       }
     } catch (error) {
       console.error('Error exporting data:', error);
-      Alert.alert('Error', 'Failed to export data');
+      Alert.alert(t.error, language === 'fr' ? 'Impossible d\'exporter les données' : 'Failed to export data');
     }
   };
 
@@ -88,18 +89,23 @@ export default function SettingsScreen() {
     router.push('/help-support');
   };
 
+  const handleLanguageToggle = () => {
+    const newLanguage = language === 'fr' ? 'en' : 'fr';
+    setLanguage(newLanguage);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <HeaderBar title="Paramètres" />
+      <HeaderBar title={t.settings} />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Preferences</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.preferences}</Text>
 
           <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
             <View style={styles.settingLabelContainer}>
               <Moon size={20} color={theme.text} style={styles.settingIcon} />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Dark Mode</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>{t.darkMode}</Text>
             </View>
             <Switch
               value={isDarkMode}
@@ -112,7 +118,7 @@ export default function SettingsScreen() {
           <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
             <View style={styles.settingLabelContainer}>
               <Bell size={20} color={theme.text} style={styles.settingIcon} />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Notifications</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>{t.notifications}</Text>
             </View>
             <Switch
               value={notifications}
@@ -124,17 +130,35 @@ export default function SettingsScreen() {
               thumbColor="#FFFFFF"
             />
           </View>
+
+          <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+            <View style={styles.settingLabelContainer}>
+              <Globe size={20} color={theme.text} style={styles.settingIcon} />
+              <View>
+                <Text style={[styles.settingLabel, { color: theme.text }]}>{t.language}</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>
+                  {language === 'fr' ? 'Français' : 'English'}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={language === 'en'}
+              onValueChange={handleLanguageToggle}
+              trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
         </View>
         
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Data Management</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.dataManagement}</Text>
           
           <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
             <View style={styles.settingLabelContainer}>
               <Database size={20} color={theme.text} style={styles.settingIcon} />
               <View>
-                <Text style={[styles.settingLabel, { color: theme.text }]}>Storage Used</Text>
-                <Text style={[styles.settingSubtitle, { color: theme.text }]}>{storageUsed}</Text>
+                <Text style={[styles.settingLabel, { color: theme.text }]}>{t.storageUsed}</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>{storageUsed}</Text>
               </View>
             </View>
           </View>
@@ -145,7 +169,7 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingLabelContainer}>
               <FileText size={20} color="#007AFF" style={styles.settingIcon} />
-              <Text style={styles.settingLabelBlue}>Export Data</Text>
+              <Text style={styles.settingLabelBlue}>{t.exportData}</Text>
             </View>
             <ChevronRight size={20} color={theme.text} />
           </TouchableOpacity>
@@ -156,14 +180,14 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingLabelContainer}>
               <Trash2 size={20} color="#FF3B30" style={styles.settingIcon} />
-              <Text style={styles.settingLabelRed}>Clear All Data</Text>
+              <Text style={styles.settingLabelRed}>{t.clearAllData}</Text>
             </View>
             <ChevronRight size={20} color={theme.text} />
           </TouchableOpacity>
         </View>
         
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>About</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t.about}</Text>
           
           <TouchableOpacity 
             style={[styles.settingItem, { borderBottomColor: theme.border }]}
@@ -171,21 +195,21 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingLabelContainer}>
               <HelpCircle size={20} color={theme.text} style={styles.settingIcon} />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Help & Support</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>{t.helpSupport}</Text>
             </View>
             <ChevronRight size={20} color={theme.text} />
           </TouchableOpacity>
           
           <View style={styles.settingItem}>
             <View style={styles.settingLabelContainer}>
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Version</Text>
-              <Text style={[styles.settingValue, { color: theme.text }]}>1.0.0</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>{t.version}</Text>
+              <Text style={[styles.settingValue, { color: theme.textSecondary }]}>1.0.0</Text>
             </View>
           </View>
         </View>
         
         <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: theme.text }]}>
+          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
             Receipt Scanner App © {new Date().getFullYear()}
           </Text>
         </View>

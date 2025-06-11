@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform } from 'r
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 
 interface HeaderBarProps {
   title: string;
@@ -13,6 +14,7 @@ interface HeaderBarProps {
 export default function HeaderBar({ title, showBackButton = false, rightComponent, onBack }: HeaderBarProps) {
   const router = useRouter();
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   
   const handleBack = () => {
     if (onBack) {
@@ -31,6 +33,7 @@ export default function HeaderBar({ title, showBackButton = false, rightComponen
           <TouchableOpacity 
             style={styles.backButton}
             onPress={handleBack}
+            accessibilityLabel={t.back}
           >
             <ChevronLeft size={24} color={theme.text} />
           </TouchableOpacity>
@@ -85,4 +88,4 @@ const styles = StyleSheet.create({
   rightPlaceholder: {
     width: 40,
   },
-}); 
+});

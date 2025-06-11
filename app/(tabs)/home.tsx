@@ -11,10 +11,12 @@ import { formatCurrency } from '@/app/lib/formatting';
 import { useIsFocused } from '@react-navigation/native';
 import { Receipt } from '@/app/lib/types';
 import { useTheme } from '@/app/themes/ThemeContext';
+import { useLanguage } from '@/app/contexts/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [recentReceipts, setRecentReceipts] = useState<Receipt[]>([]);
   const [filteredReceipts, setFilteredReceipts] = useState<Receipt[]>([]);
   const [monthlyBudget, setMonthlyBudget] = useState(0);
@@ -49,21 +51,18 @@ export default function HomeScreen() {
       const receipts = await getRecentReceipts(5);
       setRecentReceipts(receipts);
       
-      // Get current month in YYYY-MM format
       const now = new Date();
       const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       
       const budget = await getBudgetForMonth(monthKey);
       setMonthlyBudget(budget.total || 0);
       
-      // Calculate monthly spending (this month)
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       
       const monthly = await getTotalSpending(firstDay, lastDay);
       setMonthlySpending(monthly || 0);
 
-      // Load total budget from all categories
       const storedBudget = await AsyncStorage.getItem(`budget_${monthKey}`);
       if (storedBudget) {
         const budgetItems = JSON.parse(storedBudget);
@@ -83,7 +82,6 @@ export default function HomeScreen() {
   const applyFilters = () => {
     let filtered = [...recentReceipts];
 
-    // Apply search term filter
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(receipt => 
@@ -96,7 +94,6 @@ export default function HomeScreen() {
       );
     }
 
-    // Apply date range filter
     if (filters.startDate) {
       filtered = filtered.filter(receipt => 
         new Date(receipt.date) >= filters.startDate!
@@ -108,14 +105,12 @@ export default function HomeScreen() {
       );
     }
 
-    // Apply category filter
     if (filters.selectedCategories.length > 0) {
       filtered = filtered.filter(receipt =>
         filters.selectedCategories.includes(receipt.category)
       );
     }
 
-    // Apply amount range filter
     if (filters.minAmount) {
       const minAmount = parseFloat(filters.minAmount);
       filtered = filtered.filter(receipt => receipt.totalAmount >= minAmount);
@@ -125,9 +120,7 @@ export default function HomeScreen() {
       filtered = filtered.filter(receipt => receipt.totalAmount <= maxAmount);
     }
 
-    // Sort by date, most recent first
     filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
     setFilteredReceipts(filtered);
   };
 
@@ -141,9 +134,9 @@ export default function HomeScreen() {
       return (
         <View style={styles.emptyState}>
           <Clock size={48} color="#8E8E93" style={styles.emptyIcon} />
-          <Text style={styles.emptyTitle}>Aucun reçu</Text>
+          <Text style={styles.emptyTitle}>{t.noReceipts}</Text>
           <Text style={styles.emptySubtitle}>
-            Commencez par scanner un reçu ou en ajouter un manuellement
+            {t.noReceiptsSubtitle}
           </Text>
         </View>
       );
@@ -164,10 +157,10 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <HeaderBar title="Receipt Scanner" />
+        <HeaderBar title={t.receiptScanner} />
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: theme.text }]}>
-            Chargement...
+            {t.loading}
           </Text>
         </View>
       </View>
@@ -176,13 +169,13 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <HeaderBar title="Receipt Scanner" />
+      <HeaderBar title={t.receiptScanner} />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.statsContainer, { backgroundColor: theme.card }]}>
           <View style={styles.statItem}>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-              Budget Total
+              {t.totalBudget}
             </Text>
             <Text style={[styles.statValue, { color: theme.text }]}>
               {formatCurrency(totalBudget, 'CAD')}
@@ -193,7 +186,7 @@ export default function HomeScreen() {
           
           <View style={styles.statItem}>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-              Dépenses du mois
+              {t.monthlySpending}
             </Text>
             <Text style={[styles.statValue, { color: theme.text }]}>
               {formatCurrency(monthlySpending, 'CAD')}
@@ -208,10 +201,10 @@ export default function HomeScreen() {
         
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Reçus récents
+            {t.recentReceipts}
           </Text>
           <TouchableOpacity onPress={handleSeeAllPress}>
-            <Text style={[styles.seeAllText, { color: theme.text }]}>Voir tout</Text>
+            <Text style={[styles.seeAllText, { color: theme.accent }]}>{t.seeAll}</Text>
           </TouchableOpacity>
         </View>
         
@@ -271,7 +264,6 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     fontSize: 14,
-    color: '#007AFF',
   },
   emptyState: {
     alignItems: 'center',
