@@ -1,5 +1,4 @@
 import { Category } from './types';
-import { useLanguage } from '@/app/contexts/LanguageContext';
 
 export const getDefaultCategories = (t: any): Category[] => [
   {

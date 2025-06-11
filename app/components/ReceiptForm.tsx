@@ -5,7 +5,7 @@ import { Portal, Modal, Button } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { generateId } from '@/app/lib/helpers';
 import { Receipt, Category } from '@/app/lib/types';
-import { saveCustomCategories } from '@/app/lib/storage';
+import { saveCustomCategories, getAllCategories } from '@/app/lib/storage';
 import { useTheme } from '@/app/themes/ThemeContext';
 import { useLanguage } from '@/app/contexts/LanguageContext';
 
@@ -89,6 +89,15 @@ export default function ReceiptForm({
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e: KeyboardEvent) => {
         setKeyboardHeight(e.endCoordinates.height);
+        
+        // Auto-scroll to focused input on Android
+        if (Platform.OS === 'android' && focusedInputY > 0) {
+          setTimeout(() => {
+            const visibleAreaHeight = windowHeight - e.endCoordinates.height;
+            const scrollToY = Math.max(0, focusedInputY - visibleAreaHeight * 0.3);
+            scrollViewRef.current?.scrollTo({ y: scrollToY, animated: true });
+          }, 100);
+        }
       }
     );
 
@@ -103,7 +112,7 @@ export default function ReceiptForm({
       keyboardWillShow.remove();
       keyboardWillHide.remove();
     };
-  }, []);
+  }, [focusedInputY, windowHeight]);
 
   // Calculer le sous-total (prix sans taxes)
   const calculateSubtotal = () => {
@@ -171,20 +180,23 @@ export default function ReceiptForm({
         // Sauvegarder la position Y du champ pour les calculs
         setFocusedInputY(y);
         
-        // Calculer si le champ sera caché par le clavier
-        const inputBottom = y + 60; // Hauteur approximative du champ + marge
-        const visibleAreaHeight = windowHeight - keyboardHeight;
-        
-        if (inputBottom > visibleAreaHeight - 20) { // 20px de marge
-          const scrollAmount = Math.min(
-            y - (visibleAreaHeight * 0.4), // Positionner le champ à 40% de la hauteur visible
-            y
-          );
+        // Sur iOS, le scroll automatique fonctionne bien
+        if (Platform.OS === 'ios') {
+          // Calculer si le champ sera caché par le clavier
+          const inputBottom = y + 60; // Hauteur approximative du champ + marge
+          const visibleAreaHeight = windowHeight - keyboardHeight;
           
-          scrollViewRef.current?.scrollTo({
-            y: Math.max(0, scrollAmount),
-            animated: true
-          });
+          if (inputBottom > visibleAreaHeight - 20) { // 20px de marge
+            const scrollAmount = Math.min(
+              y - (visibleAreaHeight * 0.4), // Positionner le champ à 40% de la hauteur visible
+              y
+            );
+            
+            scrollViewRef.current?.scrollTo({
+              y: Math.max(0, scrollAmount),
+              animated: true
+            });
+          }
         }
       },
       () => {}
@@ -358,6 +370,7 @@ export default function ReceiptForm({
             onChangeText={setCompany}
             ref={(el) => { inputRefs.current['company'] = el }}
             onSubmitEditing={() => focusNextInput('company', 'item-0-name')}
+            onFocus={(e) => scrollToInput(e.target)}
           />
 
           <ScrollView 
@@ -423,7 +436,7 @@ export default function ReceiptForm({
                 onChangeText={(value) => updateItem(item.id, 'name', value)}
                 ref={(el) => { inputRefs.current[`item-${index}-name`] = el }}
                 onSubmitEditing={() => focusNextInput(`item-${index}-name`, `item-${index}-price`)}
-                onFocus={() => scrollToInput(inputRefs.current[`item-${index}-name`])}
+                onFocus={(e) => scrollToInput(e.target)}
               />
               
               <TextInput
@@ -435,7 +448,7 @@ export default function ReceiptForm({
                 keyboardType="decimal-pad"
                 ref={(el) => { inputRefs.current[`item-${index}-price`] = el }}
                 onSubmitEditing={() => focusNextInput(`item-${index}-price`, `item-${index}-quantity`)}
-                onFocus={() => scrollToInput(inputRefs.current[`item-${index}-price`])}
+                onFocus={(e) => scrollToInput(e.target)}
               />
               
               <TextInput
@@ -452,7 +465,7 @@ export default function ReceiptForm({
                     focusNextInput(`item-${index}-quantity`, `item-${nextIndex}-name`);
                   }
                 }}
-                onFocus={() => scrollToInput(inputRefs.current[`item-${index}-quantity`])}
+                onFocus={(e) => scrollToInput(e.target)}
               />
               
               <TouchableOpacity

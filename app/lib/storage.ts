@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Receipt, Category } from './types';
 import { generateId } from '@/app/lib/helpers';
-import { defaultCategories } from './categories';
+import { getDefaultCategories } from './categories';
 
 const RECEIPTS_KEY = 'receipts';
 const SETTINGS_KEY = 'settings';
@@ -314,12 +314,22 @@ export async function loadCustomCategories(): Promise<Category[]> {
   }
 }
 
-export async function getAllCategories(): Promise<Category[]> {
+export async function getAllCategories(t?: any): Promise<Category[]> {
   try {
     const customCategories = await loadCustomCategories();
+    
+    // Si on a les traductions, utiliser les catégories traduites
+    if (t) {
+      const translatedCategories = getDefaultCategories(t);
+      return [...translatedCategories, ...customCategories];
+    }
+    
+    // Sinon, utiliser les catégories par défaut (pour la compatibilité)
+    const { defaultCategories } = await import('./categories');
     return [...defaultCategories, ...customCategories];
   } catch (error) {
     console.error('Erreur lors du chargement des catégories:', error);
+    const { defaultCategories } = await import('./categories');
     return defaultCategories;
   }
 }
@@ -357,4 +367,4 @@ export async function saveBudgetForMonth(monthKey: string, budget: Budget): Prom
     console.error('Erreur lors de la sauvegarde du budget:', error);
     throw error;
   }
-} 
+}

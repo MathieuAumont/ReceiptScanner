@@ -345,7 +345,7 @@ export default function BudgetScreen() {
                         color: theme.text,
                         backgroundColor: theme.background
                       }]}
-                      keyboardType="numeric"
+                      keyboardType="decimal-pad"
                       value={budgetItem?.amount.toString() || '0'}
                       onChangeText={(text) => updateBudgetAmount(category.id, text)}
                       placeholder="0"
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    padding: 14,
+    padding: 16,
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -661,12 +661,12 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   editButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 });
