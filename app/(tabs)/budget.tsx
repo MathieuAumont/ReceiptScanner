@@ -4,18 +4,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Category } from '@/app/lib/types';
-import { getAllCategories } from '@/app/lib/storage';
+import { getAllCategories, getReceipts } from '@/app/lib/storage';
 import { useTheme } from '@/app/themes/ThemeContext';
 import HeaderBar from '@/app/components/HeaderBar';
+import { formatCurrency } from '@/app/lib/formatting';
+import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react-native';
 
 interface BudgetItem {
   categoryId: string;
   amount: number;
 }
 
-interface MonthlyBudget {
-  month: string; // Format: 'YYYY-MM'
-  items: BudgetItem[];
+interface CategorySpending {
+  categoryId: string;
+  budgeted: number;
+  spent: number;
+  percentage: number;
+  status: 'good' | 'warning' | 'danger';
 }
 
 export default function BudgetScreen() {
@@ -23,15 +28,24 @@ export default function BudgetScreen() {
   const { theme } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentBudget, setCurrentBudget] = useState<BudgetItem[]>([]);
+  const [categorySpending, setCategorySpending] = useState<CategorySpending[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString().slice(0, 7)
   );
   const [isEditing, setIsEditing] = useState(false);
+  const [totalBudget, setTotalBudget] = useState(0);
+  const [totalSpent, setTotalSpent] = useState(0);
 
   useEffect(() => {
     loadCategories();
     loadBudget();
   }, [selectedMonth]);
+
+  useEffect(() => {
+    if (categories.length > 0 && currentBudget.length > 0) {
+      calculateSpending();
+    }
+  }, [categories, currentBudget, selectedMonth]);
 
   const loadCategories = async () => {
     try {
@@ -55,10 +69,74 @@ export default function BudgetScreen() {
     try {
       const storedBudget = await AsyncStorage.getItem(`budget_${selectedMonth}`);
       if (storedBudget) {
-        setCurrentBudget(JSON.parse(storedBudget));
+        const budget = JSON.parse(storedBudget);
+        setCurrentBudget(budget);
+      } else {
+        // Initialize with empty budget for all categories
+        const allCategories = await getAllCategories();
+        const emptyBudget = allCategories.map(cat => ({
+          categoryId: cat.id,
+          amount: 0
+        }));
+        setCurrentBudget(emptyBudget);
       }
     } catch (error) {
       console.error('Error loading budget:', error);
+    }
+  };
+
+  const calculateSpending = async () => {
+    try {
+      const receipts = await getReceipts();
+      const [year, month] = selectedMonth.split('-');
+      
+      // Filter receipts for the selected month
+      const monthReceipts = receipts.filter(receipt => {
+        const receiptDate = new Date(receipt.date);
+        return receiptDate.getFullYear() === parseInt(year) && 
+               receiptDate.getMonth() === parseInt(month) - 1;
+      });
+
+      // Calculate spending by category
+      const spendingByCategory = monthReceipts.reduce((acc, receipt) => {
+        const categoryId = receipt.category;
+        acc[categoryId] = (acc[categoryId] || 0) + receipt.totalAmount;
+        return acc;
+      }, {} as { [key: string]: number });
+
+      // Calculate category spending with status
+      const categorySpendingData = categories.map(category => {
+        const budgetItem = currentBudget.find(item => item.categoryId === category.id);
+        const budgeted = budgetItem?.amount || 0;
+        const spent = spendingByCategory[category.id] || 0;
+        const percentage = budgeted > 0 ? (spent / budgeted) * 100 : 0;
+        
+        let status: 'good' | 'warning' | 'danger' = 'good';
+        if (percentage >= 100) {
+          status = 'danger';
+        } else if (percentage >= 80) {
+          status = 'warning';
+        }
+
+        return {
+          categoryId: category.id,
+          budgeted,
+          spent,
+          percentage,
+          status
+        };
+      });
+
+      setCategorySpending(categorySpendingData);
+      
+      // Calculate totals
+      const totalBudgetAmount = currentBudget.reduce((sum, item) => sum + item.amount, 0);
+      const totalSpentAmount = Object.values(spendingByCategory).reduce((sum, amount) => sum + amount, 0);
+      
+      setTotalBudget(totalBudgetAmount);
+      setTotalSpent(totalSpentAmount);
+    } catch (error) {
+      console.error('Error calculating spending:', error);
     }
   };
 
@@ -70,6 +148,7 @@ export default function BudgetScreen() {
       );
       setIsEditing(false);
       Alert.alert('Succès', 'Budget sauvegardé avec succès');
+      calculateSpending(); // Recalculate after saving
     } catch (error) {
       console.error('Error saving budget:', error);
       Alert.alert('Erreur', 'Impossible de sauvegarder le budget');
@@ -106,23 +185,130 @@ export default function BudgetScreen() {
     });
   };
 
+  const getStatusColor = (status: 'good' | 'warning' | 'danger') => {
+    switch (status) {
+      case 'good':
+        return '#4CAF50';
+      case 'warning':
+        return '#FF9800';
+      case 'danger':
+        return theme.error;
+      default:
+        return theme.textSecondary;
+    }
+  };
+
+  const getStatusIcon = (status: 'good' | 'warning' | 'danger') => {
+    switch (status) {
+      case 'good':
+        return <TrendingUp size={16} color="#4CAF50" />;
+      case 'warning':
+        return <AlertTriangle size={16} color="#FF9800" />;
+      case 'danger':
+        return <TrendingDown size={16} color={theme.error} />;
+      default:
+        return null;
+    }
+  };
+
+  const overallPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+  const overallStatus = overallPercentage >= 100 ? 'danger' : overallPercentage >= 80 ? 'warning' : 'good';
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <HeaderBar title="Budget" />
 
-      <ScrollView style={styles.scrollView}>
-        {categories.map(category => {
-          const budgetItem = currentBudget.find(
-            item => item.categoryId === category.id
-          );
+      {/* Month Selector */}
+      <View style={[styles.monthSelector, { backgroundColor: theme.card }]}>
+        <TouchableOpacity onPress={selectPreviousMonth} style={styles.monthButton}>
+          <Text style={[styles.monthButtonText, { color: theme.accent }]}>‹</Text>
+        </TouchableOpacity>
+        <Text style={[styles.monthText, { color: theme.text }]}>
+          {formatMonth(selectedMonth)}
+        </Text>
+        <TouchableOpacity onPress={selectNextMonth} style={styles.monthButton}>
+          <Text style={[styles.monthButtonText, { color: theme.accent }]}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Overall Progress */}
+      <View style={[styles.overallProgress, { backgroundColor: theme.card }]}>
+        <View style={styles.overallHeader}>
+          <Text style={[styles.overallTitle, { color: theme.text }]}>Progression globale</Text>
+          {getStatusIcon(overallStatus)}
+        </View>
+        <View style={styles.overallAmounts}>
+          <Text style={[styles.overallSpent, { color: theme.text }]}>
+            {formatCurrency(totalSpent, 'CAD')} dépensé
+          </Text>
+          <Text style={[styles.overallBudget, { color: theme.textSecondary }]}>
+            sur {formatCurrency(totalBudget, 'CAD')}
+          </Text>
+        </View>
+        <View style={[styles.progressBarContainer, { backgroundColor: theme.border }]}>
+          <View 
+            style={[
+              styles.progressBar, 
+              { 
+                width: `${Math.min(overallPercentage, 100)}%`,
+                backgroundColor: getStatusColor(overallStatus)
+              }
+            ]} 
+          />
+        </View>
+        <Text style={[styles.percentageText, { color: getStatusColor(overallStatus) }]}>
+          {overallPercentage.toFixed(1)}%
+        </Text>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {categorySpending.map(categoryData => {
+          const category = categories.find(cat => cat.id === categoryData.categoryId);
+          if (!category) return null;
+
+          const budgetItem = currentBudget.find(item => item.categoryId === category.id);
+
           return (
             <View key={category.id} style={[styles.budgetItem, { backgroundColor: theme.card }]}>
-              <View style={styles.categoryInfo}>
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
-                <Text style={[styles.categoryName, { color: theme.text }]}>
-                  {category.name}
-                </Text>
+              <View style={styles.categoryHeader}>
+                <View style={styles.categoryInfo}>
+                  <Text style={styles.categoryIcon}>{category.icon}</Text>
+                  <View style={styles.categoryDetails}>
+                    <Text style={[styles.categoryName, { color: theme.text }]}>
+                      {category.name}
+                    </Text>
+                    <View style={styles.amountRow}>
+                      <Text style={[styles.spentAmount, { color: theme.text }]}>
+                        {formatCurrency(categoryData.spent, 'CAD')}
+                      </Text>
+                      <Text style={[styles.budgetAmount, { color: theme.textSecondary }]}>
+                        / {formatCurrency(categoryData.budgeted, 'CAD')}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.statusContainer}>
+                  {getStatusIcon(categoryData.status)}
+                  <Text style={[styles.percentageText, { color: getStatusColor(categoryData.status) }]}>
+                    {categoryData.percentage.toFixed(0)}%
+                  </Text>
+                </View>
               </View>
+
+              {/* Progress Bar */}
+              <View style={[styles.progressBarContainer, { backgroundColor: theme.border }]}>
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    { 
+                      width: `${Math.min(categoryData.percentage, 100)}%`,
+                      backgroundColor: getStatusColor(categoryData.status)
+                    }
+                  ]} 
+                />
+              </View>
+
+              {/* Budget Input */}
               {isEditing ? (
                 <TextInput
                   style={[styles.input, { 
@@ -133,13 +319,24 @@ export default function BudgetScreen() {
                   keyboardType="numeric"
                   value={budgetItem?.amount.toString() || '0'}
                   onChangeText={(text) => updateBudgetAmount(category.id, text)}
-                  placeholder="0"
+                  placeholder="Budget"
                   placeholderTextColor={theme.textSecondary}
                 />
-              ) : (
-                <Text style={[styles.amount, { color: theme.accent }]}>
-                  {budgetItem?.amount?.toFixed(2) || '0.00'} $
-                </Text>
+              ) : null}
+
+              {/* Remaining Amount */}
+              {categoryData.budgeted > 0 && (
+                <View style={styles.remainingContainer}>
+                  <Text style={[styles.remainingLabel, { color: theme.textSecondary }]}>
+                    Restant: 
+                  </Text>
+                  <Text style={[
+                    styles.remainingAmount, 
+                    { color: categoryData.budgeted - categoryData.spent >= 0 ? '#4CAF50' : theme.error }
+                  ]}>
+                    {formatCurrency(categoryData.budgeted - categoryData.spent, 'CAD')}
+                  </Text>
+                </View>
               )}
             </View>
           );
@@ -151,18 +348,29 @@ export default function BudgetScreen() {
         borderTopColor: theme.border
       }]}>
         {isEditing ? (
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: theme.accent }]} 
-            onPress={saveBudget}
-          >
-            <Text style={styles.buttonText}>Sauvegarder</Text>
-          </TouchableOpacity>
+          <View style={styles.editingFooter}>
+            <TouchableOpacity 
+              style={[styles.button, styles.cancelButton, { backgroundColor: theme.background }]} 
+              onPress={() => {
+                setIsEditing(false);
+                loadBudget(); // Reset changes
+              }}
+            >
+              <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.button, styles.saveButton, { backgroundColor: theme.accent }]} 
+              onPress={saveBudget}
+            >
+              <Text style={styles.buttonText}>Sauvegarder</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity
             style={[styles.button, { backgroundColor: '#4CAF50' }]}
             onPress={() => setIsEditing(true)}
           >
-            <Text style={styles.buttonText}>Modifier</Text>
+            <Text style={styles.buttonText}>Modifier le budget</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -174,51 +382,174 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  budgetItem: {
+  monthSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    marginVertical: 1,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 12,
+  },
+  monthButton: {
+    padding: 8,
+  },
+  monthButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  monthText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  overallProgress: {
+    margin: 16,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  overallHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  overallTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  overallAmounts: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 12,
+  },
+  overallSpent: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  overallBudget: {
+    fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  budgetItem: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   categoryInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   categoryIcon: {
     fontSize: 24,
     marginRight: 12,
   },
+  categoryDetails: {
+    flex: 1,
+  },
   categoryName: {
     fontSize: 16,
-    fontWeight: '500',
-  },
-  amount: {
-    fontSize: 16,
     fontWeight: '600',
+    marginBottom: 4,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  spentAmount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginRight: 4,
+  },
+  budgetAmount: {
+    fontSize: 14,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  percentageText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  progressBarContainer: {
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 4,
   },
   input: {
     borderWidth: 1,
     borderRadius: 8,
-    padding: 8,
-    width: 100,
-    textAlign: 'right',
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  remainingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  remainingLabel: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  remainingAmount: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   footer: {
     padding: 16,
     borderTopWidth: 1,
   },
+  editingFooter: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   button: {
+    flex: 1,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  saveButton: {
+    flex: 2,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
-}); 
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
