@@ -84,6 +84,9 @@ export default function ReceiptForm({
   const [pricesIncludeTax, setPricesIncludeTax] = useState(false);
   const inputRefs = useRef<{ [key: string]: TextInput | null }>({});
 
+  // État pour stocker les valeurs textuelles des prix (pour gérer les décimales)
+  const [priceTexts, setPriceTexts] = useState<{ [key: string]: string }>({});
+
   // Recharger les catégories quand la langue change
   useEffect(() => {
     const reloadCategories = async () => {
@@ -166,36 +169,59 @@ export default function ReceiptForm({
   const removeItem = (itemId: string) => {
     if (items.length === 1) {
       // If it's the last item, just clear it instead of removing
-      setItems([{ id: generateId(), name: '', price: 0, quantity: 1 }]);
+      const newId = generateId();
+      setItems([{ id: newId, name: '', price: 0, quantity: 1 }]);
+      // Clear the price text for the old item and set empty for new item
+      setPriceTexts(prev => {
+        const newPriceTexts = { ...prev };
+        delete newPriceTexts[itemId];
+        newPriceTexts[newId] = '';
+        return newPriceTexts;
+      });
       return;
     }
     setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+    // Remove the price text for the removed item
+    setPriceTexts(prev => {
+      const newPriceTexts = { ...prev };
+      delete newPriceTexts[itemId];
+      return newPriceTexts;
+    });
   };
 
   // Fonction améliorée pour gérer la saisie des prix avec décimales
   const handlePriceChange = (id: string, value: string) => {
-    // Permettre seulement les chiffres, un point et une virgule
-    const cleanValue = value.replace(/[^0-9.,]/g, '');
+    // Stocker la valeur textuelle telle qu'elle est tapée
+    setPriceTexts(prev => ({ ...prev, [id]: value }));
     
-    // Remplacer la virgule par un point pour la cohérence
-    const normalizedValue = cleanValue.replace(',', '.');
+    // Nettoyer la valeur pour la conversion numérique
+    let cleanValue = value;
     
-    // Vérifier qu'il n'y a qu'un seul séparateur décimal
-    const parts = normalizedValue.split('.');
+    // Remplacer la virgule par un point
+    cleanValue = cleanValue.replace(',', '.');
+    
+    // Permettre seulement les chiffres et un point
+    cleanValue = cleanValue.replace(/[^0-9.]/g, '');
+    
+    // S'assurer qu'il n'y a qu'un seul point
+    const parts = cleanValue.split('.');
     if (parts.length > 2) {
-      return; // Ignorer si plus d'un point
+      cleanValue = parts[0] + '.' + parts.slice(1).join('');
     }
     
     // Limiter à 2 décimales
     if (parts.length === 2 && parts[1].length > 2) {
-      return; // Ignorer si plus de 2 décimales
+      cleanValue = parts[0] + '.' + parts[1].substring(0, 2);
     }
+    
+    // Convertir en nombre pour le stockage
+    const numericValue = cleanValue === '' || cleanValue === '.' ? 0 : parseFloat(cleanValue) || 0;
     
     setItems(prevItems => prevItems.map(item => {
       if (item.id === id) {
         return {
           ...item,
-          price: normalizedValue === '' ? 0 : parseFloat(normalizedValue) || 0
+          price: numericValue
         };
       }
       return item;
@@ -347,7 +373,9 @@ export default function ReceiptForm({
   const resetForm = () => {
     setCompany('');
     setDate(new Date());
-    setItems([{ id: generateId(), name: '', price: 0, quantity: 1 }]);
+    const newId = generateId();
+    setItems([{ id: newId, name: '', price: 0, quantity: 1 }]);
+    setPriceTexts({ [newId]: '' }); // Reset price texts
     setTPS(0);
     setTVQ(0);
     setCategory(categories[0]?.id);
@@ -385,6 +413,15 @@ export default function ReceiptForm({
       return () => subscription.remove();
     }
   }, []);
+
+  // Fonction pour obtenir la valeur d'affichage du prix
+  const getPriceDisplayValue = (item: Item) => {
+    const storedText = priceTexts[item.id];
+    if (storedText !== undefined) {
+      return storedText;
+    }
+    return item.price === 0 ? '' : item.price.toString();
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -503,7 +540,7 @@ export default function ReceiptForm({
                 style={[styles.input, styles.itemPriceInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                 placeholder={t.price}
                 placeholderTextColor={theme.textSecondary}
-                value={item.price === 0 ? '' : item.price.toString()}
+                value={getPriceDisplayValue(item)}
                 onChangeText={(value) => handlePriceChange(item.id, value)}
                 keyboardType="decimal-pad"
                 ref={(el) => { inputRefs.current[`item-${index}-price`] = el }}
