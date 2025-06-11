@@ -23,7 +23,7 @@ export default function ReceiptDetailsScreen() {
   useEffect(() => {
     loadReceipt();
     loadCategories();
-  }, [id]);
+  }, [id, t, language]);
 
   const loadReceipt = async () => {
     if (!id) {
@@ -74,7 +74,8 @@ export default function ReceiptDetailsScreen() {
 
   const loadCategories = async () => {
     try {
-      const loadedCategories = await getAllCategories();
+      // Charger les catégories avec les traductions
+      const loadedCategories = await getAllCategories(t);
       setCategories(loadedCategories);
     } catch (error) {
       console.error('Error loading categories:', error);

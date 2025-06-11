@@ -16,16 +16,17 @@ interface ReceiptCardProps {
 export default function ReceiptCard({ receipt, onPress }: ReceiptCardProps) {
   const router = useRouter();
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    getAllCategories().then(setCategories);
-  }, []);
+    // Charger les catégories avec les traductions
+    getAllCategories(t).then(setCategories);
+  }, [t, language]);
 
   const getCategoryName = (categoryId: string): string => {
     const category = categories.find((cat: Category) => cat.id === categoryId);
-    return category?.name || (t.language === 'fr' ? 'Non catégorisé' : 'Uncategorized');
+    return category?.name || (language === 'fr' ? 'Non catégorisé' : 'Uncategorized');
   };
 
   const getCategoryColor = (categoryId: string): string => {

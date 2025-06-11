@@ -84,6 +84,20 @@ export default function ReceiptForm({
   const [pricesIncludeTax, setPricesIncludeTax] = useState(false);
   const inputRefs = useRef<{ [key: string]: TextInput | null }>({});
 
+  // Recharger les catégories quand la langue change
+  useEffect(() => {
+    const reloadCategories = async () => {
+      try {
+        const updatedCategories = await getAllCategories(t);
+        onUpdateCategories(updatedCategories);
+      } catch (error) {
+        console.error('Error reloading categories:', error);
+      }
+    };
+    
+    reloadCategories();
+  }, [t, language]);
+
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
