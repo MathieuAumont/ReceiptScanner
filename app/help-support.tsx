@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useTheme } from '@/app/themes/ThemeContext';
 import HeaderBar from '@/app/components/HeaderBar';
-import { Camera, Plus, BarChart3, Settings, Wallet, FileText, Smartphone, Cloud, Shield } from 'lucide-react-native';
+import { Camera, Plus, ChartBar as BarChart3, Settings, Wallet, FileText, Smartphone, Cloud, Shield } from 'lucide-react-native';
 
 export default function HelpSupportScreen() {
   const { theme } = useTheme();

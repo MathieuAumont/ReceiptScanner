@@ -9,7 +9,7 @@ import BarChartComponent from '@/app/components/BarChartComponent';
 import { getReceipts } from '@/app/lib/storage';
 import { Receipt } from '@/app/lib/types';
 import { defaultCategories } from '@/app/lib/categories';
-import { LineChart, Calendar, TrendingUp, BarChart3 } from 'lucide-react-native';
+import { ChartLine as LineChart, Calendar, TrendingUp, ChartBar as BarChart3 } from 'lucide-react-native';
 import { formatCurrency } from '@/app/lib/formatting';
 
 interface PieChartData {
