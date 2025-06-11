@@ -172,6 +172,52 @@ export default function ReceiptForm({
     setItems(prevItems => prevItems.filter(item => item.id !== itemId));
   };
 
+  // Fonction améliorée pour gérer la saisie des prix avec décimales
+  const handlePriceChange = (id: string, value: string) => {
+    // Permettre seulement les chiffres, un point et une virgule
+    const cleanValue = value.replace(/[^0-9.,]/g, '');
+    
+    // Remplacer la virgule par un point pour la cohérence
+    const normalizedValue = cleanValue.replace(',', '.');
+    
+    // Vérifier qu'il n'y a qu'un seul séparateur décimal
+    const parts = normalizedValue.split('.');
+    if (parts.length > 2) {
+      return; // Ignorer si plus d'un point
+    }
+    
+    // Limiter à 2 décimales
+    if (parts.length === 2 && parts[1].length > 2) {
+      return; // Ignorer si plus de 2 décimales
+    }
+    
+    setItems(prevItems => prevItems.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          price: normalizedValue === '' ? 0 : parseFloat(normalizedValue) || 0
+        };
+      }
+      return item;
+    }));
+  };
+
+  // Fonction pour gérer la saisie des quantités
+  const handleQuantityChange = (id: string, value: string) => {
+    // Permettre seulement les chiffres entiers
+    const cleanValue = value.replace(/[^0-9]/g, '');
+    
+    setItems(prevItems => prevItems.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          quantity: cleanValue === '' ? 1 : parseInt(cleanValue) || 1
+        };
+      }
+      return item;
+    }));
+  };
+
   const updateItem = (id: string, field: keyof Item, value: string | number) => {
     setItems(prevItems => prevItems.map(item => {
       if (item.id === id) {
@@ -458,7 +504,7 @@ export default function ReceiptForm({
                 placeholder={t.price}
                 placeholderTextColor={theme.textSecondary}
                 value={item.price === 0 ? '' : item.price.toString()}
-                onChangeText={(value) => updateItem(item.id, 'price', value)}
+                onChangeText={(value) => handlePriceChange(item.id, value)}
                 keyboardType="decimal-pad"
                 ref={(el) => { inputRefs.current[`item-${index}-price`] = el }}
                 onSubmitEditing={() => focusNextInput(`item-${index}-price`, `item-${index}-quantity`)}
@@ -470,8 +516,8 @@ export default function ReceiptForm({
                 placeholder={t.quantity}
                 placeholderTextColor={theme.textSecondary}
                 value={item.quantity.toString()}
-                onChangeText={(value) => updateItem(item.id, 'quantity', value)}
-                keyboardType="numeric"
+                onChangeText={(value) => handleQuantityChange(item.id, value)}
+                keyboardType="number-pad"
                 ref={(el) => { inputRefs.current[`item-${index}-quantity`] = el }}
                 onSubmitEditing={() => {
                   const nextIndex = index + 1;
