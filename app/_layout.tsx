@@ -9,6 +9,7 @@ import { LanguageProvider } from '@/app/contexts/LanguageContext';
 import { useFonts, Roboto_400Regular, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto';
 import * as SplashScreen from 'expo-splash-screen';
 import { Portal } from 'react-native-paper'
+import { useFrameworkReady } from '@/hooks/useFrameworkReady'
 
 function useFrameworkReady() {
   useEffect(() => {
