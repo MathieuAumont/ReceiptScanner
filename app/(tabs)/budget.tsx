@@ -8,7 +8,7 @@ import { getAllCategories, getReceipts } from '@/app/lib/storage';
 import { useTheme } from '@/app/themes/ThemeContext';
 import HeaderBar from '@/app/components/HeaderBar';
 import { formatCurrency } from '@/app/lib/formatting';
-import { TrendingUp, TrendingDown, TriangleAlert as AlertTriangle } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, TriangleAlert as AlertTriangle, ChevronLeft, ChevronRight, Calendar } from 'lucide-react-native';
 
 interface BudgetItem {
   categoryId: string;
@@ -179,6 +179,24 @@ export default function BudgetScreen() {
     });
   };
 
+  const formatMonthShort = (dateString: string) => {
+    const date = new Date(dateString + '-01');
+    return date.toLocaleDateString('fr-CA', {
+      month: 'short',
+      year: '2-digit'
+    });
+  };
+
+  const isCurrentMonth = () => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    return selectedMonth === currentMonth;
+  };
+
+  const isFutureMonth = () => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    return selectedMonth > currentMonth;
+  };
+
   const getStatusColor = (status: 'good' | 'warning' | 'danger') => {
     switch (status) {
       case 'good':
@@ -195,11 +213,11 @@ export default function BudgetScreen() {
   const getStatusIcon = (status: 'good' | 'warning' | 'danger') => {
     switch (status) {
       case 'good':
-        return <TrendingUp size={14} color="#4CAF50" />;
+        return <TrendingUp size={12} color="#4CAF50" />;
       case 'warning':
-        return <AlertTriangle size={14} color="#FF9800" />;
+        return <AlertTriangle size={12} color="#FF9800" />;
       case 'danger':
-        return <TrendingDown size={14} color={theme.error} />;
+        return <TrendingDown size={12} color={theme.error} />;
       default:
         return null;
     }
@@ -212,41 +230,65 @@ export default function BudgetScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <HeaderBar title="Budget" />
 
-      {/* Compact Month Selector */}
+      {/* Elegant Month Selector */}
       <View style={[styles.monthSelector, { backgroundColor: theme.card }]}>
-        <TouchableOpacity onPress={selectPreviousMonth} style={styles.monthButton}>
-          <Text style={[styles.monthButtonText, { color: theme.accent }]}>‹</Text>
+        <TouchableOpacity 
+          onPress={selectPreviousMonth} 
+          style={[styles.monthNavButton, { backgroundColor: theme.background }]}
+        >
+          <ChevronLeft size={16} color={theme.accent} />
         </TouchableOpacity>
-        <Text style={[styles.monthText, { color: theme.text }]}>
-          {formatMonth(selectedMonth)}
-        </Text>
-        <TouchableOpacity onPress={selectNextMonth} style={styles.monthButton}>
-          <Text style={[styles.monthButtonText, { color: theme.accent }]}>›</Text>
+        
+        <View style={styles.monthDisplay}>
+          <Calendar size={14} color={theme.accent} style={styles.calendarIcon} />
+          <Text style={[styles.monthText, { color: theme.text }]}>
+            {formatMonth(selectedMonth)}
+          </Text>
+          {isCurrentMonth() && (
+            <View style={[styles.currentBadge, { backgroundColor: theme.accent }]}>
+              <Text style={styles.currentBadgeText}>Actuel</Text>
+            </View>
+          )}
+          {isFutureMonth() && (
+            <View style={[styles.futureBadge, { backgroundColor: '#9C27B0' }]}>
+              <Text style={styles.futureBadgeText}>Planifié</Text>
+            </View>
+          )}
+        </View>
+        
+        <TouchableOpacity 
+          onPress={selectNextMonth} 
+          style={[styles.monthNavButton, { backgroundColor: theme.background }]}
+        >
+          <ChevronRight size={16} color={theme.accent} />
         </TouchableOpacity>
       </View>
 
-      {/* Compact Overall Progress */}
-      <View style={[styles.overallProgress, { backgroundColor: theme.card }]}>
-        <View style={styles.overallRow}>
-          <View style={styles.overallAmounts}>
-            <Text style={[styles.overallSpent, { color: theme.text }]}>
+      {/* Budget Total Section with Different Background */}
+      <View style={[styles.totalBudgetSection, { backgroundColor: '#F8F9FA' }]}>
+        <Text style={[styles.totalBudgetLabel, { color: '#6C757D' }]}>
+          Budget Total du Mois
+        </Text>
+        <View style={styles.totalBudgetRow}>
+          <View style={styles.totalAmounts}>
+            <Text style={[styles.totalSpent, { color: '#212529' }]}>
               {formatCurrency(totalSpent, 'CAD')}
             </Text>
-            <Text style={[styles.overallBudget, { color: theme.textSecondary }]}>
+            <Text style={[styles.totalBudgetAmount, { color: '#6C757D' }]}>
               / {formatCurrency(totalBudget, 'CAD')}
             </Text>
           </View>
-          <View style={styles.statusContainer}>
+          <View style={styles.totalStatusContainer}>
             {getStatusIcon(overallStatus)}
-            <Text style={[styles.percentageText, { color: getStatusColor(overallStatus) }]}>
+            <Text style={[styles.totalPercentageText, { color: getStatusColor(overallStatus) }]}>
               {overallPercentage.toFixed(0)}%
             </Text>
           </View>
         </View>
-        <View style={[styles.progressBarContainer, { backgroundColor: theme.border }]}>
+        <View style={[styles.totalProgressBarContainer, { backgroundColor: '#E9ECEF' }]}>
           <View 
             style={[
-              styles.progressBar, 
+              styles.totalProgressBar, 
               { 
                 width: `${Math.min(overallPercentage, 100)}%`,
                 backgroundColor: getStatusColor(overallStatus)
@@ -335,7 +377,7 @@ export default function BudgetScreen() {
         })}
       </ScrollView>
 
-      {/* Compact Footer */}
+      {/* Improved Footer */}
       <View style={[styles.footer, { 
         backgroundColor: theme.card,
         borderTopColor: theme.border
@@ -343,7 +385,7 @@ export default function BudgetScreen() {
         {isEditing ? (
           <View style={styles.editingFooter}>
             <TouchableOpacity 
-              style={[styles.button, styles.cancelButton]} 
+              style={[styles.button, styles.cancelButton, { borderColor: theme.border }]} 
               onPress={() => {
                 setIsEditing(false);
                 loadBudget();
@@ -355,15 +397,15 @@ export default function BudgetScreen() {
               style={[styles.button, styles.saveButton, { backgroundColor: theme.accent }]} 
               onPress={saveBudget}
             >
-              <Text style={styles.buttonText}>Sauvegarder</Text>
+              <Text style={styles.saveButtonText}>Sauvegarder Budget</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: '#4CAF50' }]}
+            style={[styles.button, styles.editButton, { backgroundColor: '#4CAF50' }]}
             onPress={() => setIsEditing(true)}
           >
-            <Text style={styles.buttonText}>Modifier</Text>
+            <Text style={styles.editButtonText}>Modifier Budget</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -382,22 +424,6 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 16,
     marginTop: 8,
-    borderRadius: 8,
-  },
-  monthButton: {
-    padding: 6,
-  },
-  monthButtonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  monthText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  overallProgress: {
-    margin: 16,
-    padding: 14,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -405,23 +431,108 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  overallRow: {
+  monthNavButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  monthDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  calendarIcon: {
+    marginRight: 8,
+  },
+  monthText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  currentBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  currentBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  futureBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  futureBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  totalBudgetSection: {
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  totalBudgetLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  totalBudgetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  overallAmounts: {
+  totalAmounts: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-  overallSpent: {
-    fontSize: 20,
+  totalSpent: {
+    fontSize: 24,
     fontWeight: 'bold',
     marginRight: 4,
   },
-  overallBudget: {
+  totalBudgetAmount: {
+    fontSize: 16,
+  },
+  totalStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  totalPercentageText: {
     fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  totalProgressBarContainer: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  totalProgressBar: {
+    height: '100%',
+    borderRadius: 4,
   },
   scrollView: {
     flex: 1,
@@ -449,7 +560,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryIcon: {
-    fontSize: 20,
+    fontSize: 18,
     marginRight: 10,
   },
   categoryDetails: {
@@ -465,7 +576,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   spentAmount: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     marginRight: 4,
   },
@@ -485,57 +596,65 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   progressBarContainer: {
-    height: 6,
-    borderRadius: 3,
+    height: 5,
+    borderRadius: 2.5,
     marginBottom: 6,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 2.5,
   },
   compactInput: {
     borderWidth: 1,
     borderRadius: 6,
     padding: 8,
     fontSize: 14,
-    width: 80,
+    width: 70,
     textAlign: 'right',
   },
   remainingText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     textAlign: 'right',
   },
   footer: {
-    padding: 12,
+    padding: 16,
     borderTopWidth: 1,
   },
   editingFooter: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
   },
   button: {
     flex: 1,
-    padding: 12,
-    borderRadius: 8,
+    padding: 14,
+    borderRadius: 10,
     alignItems: 'center',
   },
   cancelButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    flex: 0.8,
   },
   saveButton: {
-    flex: 2,
+    flex: 1.2,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+  editButton: {
+    width: '100%',
   },
   cancelButtonText: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '600',
   },
 });
