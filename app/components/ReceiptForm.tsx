@@ -269,6 +269,7 @@ export default function ReceiptForm({
     }
   };
 
+  // Internal form reset - only clears state
   const resetForm = () => {
     setCompany('');
     setDate(new Date());
@@ -281,19 +282,24 @@ export default function ReceiptForm({
     setShowCategoryModal(false);
     setNewCategoryName('');
     setSelectedColor(PRESET_COLORS[0]);
+  };
+
+  // Handle reset button press - calls resetForm and then onReset
+  const handleResetButtonPress = () => {
+    resetForm();
     if (onReset) {
       onReset();
     }
   };
 
-  // Add useEffect for cleanup
+  // Add useEffect for cleanup - only calls resetForm, not onReset
   useEffect(() => {
     return () => {
       resetForm();
     };
   }, []);
 
-  // Add useEffect for handling navigation reset
+  // Add useEffect for handling navigation reset - only calls resetForm, not onReset
   useEffect(() => {
     if (Platform.OS === 'android') {
       const handleBackPress = () => {
@@ -492,7 +498,7 @@ export default function ReceiptForm({
         <View style={[styles.buttonContainer, { backgroundColor: theme.background }]}>
           <TouchableOpacity
             style={[styles.resetButton, { backgroundColor: '#B71C1C' }]}
-            onPress={resetForm}
+            onPress={handleResetButtonPress}
           >
             <Text style={[styles.resetButtonText, { color: '#FFFFFF' }]}>Réinitialiser</Text>
           </TouchableOpacity>
