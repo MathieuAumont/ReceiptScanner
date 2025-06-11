@@ -8,7 +8,7 @@ import { getAllCategories, getReceipts } from '@/app/lib/storage';
 import { useTheme } from '@/app/themes/ThemeContext';
 import HeaderBar from '@/app/components/HeaderBar';
 import { formatCurrency } from '@/app/lib/formatting';
-import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 
 interface BudgetItem {
   categoryId: string;
