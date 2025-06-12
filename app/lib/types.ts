@@ -32,6 +32,7 @@ export interface Receipt {
   totalAmount: number;
   currency: string;
   notes?: string;
+  originalImage?: string;
   metadata?: {
     processedAt: Date;
     ocrEngine: string;
@@ -62,4 +63,4 @@ export type ReceiptValidationResult = {
 };
 
 // Ajout d'un export par défaut vide pour éviter que le fichier soit traité comme une route
-export default {}; 
+export default {};

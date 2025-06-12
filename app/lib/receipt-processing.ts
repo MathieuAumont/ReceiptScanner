@@ -4,16 +4,6 @@ import { extractReceiptData } from './openai';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { captureRef } from 'react-native-view-shot';
-import { WebView } from 'react-native-webview';
-import React, { useRef } from 'react';
-
-async function convertPdfToImage(uri: string): Promise<string> {
-  // Pour l'instant, nous allons simplement rejeter les PDF
-  // TODO: La conversion PDF vers image nécessite une approche différente
-  // car elle doit être faite dans un composant React
-  throw new Error("PDF processing requires using the PdfConverter component");
-}
 
 async function preprocessImage(uri: string): Promise<string> {
   try {
@@ -30,30 +20,46 @@ async function preprocessImage(uri: string): Promise<string> {
   }
 }
 
+async function convertImageToBase64(uri: string): Promise<string> {
+  try {
+    if (Platform.OS === 'web') {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64String = reader.result as string;
+          resolve(base64String.split(',')[1]); // Enlever le préfixe data:image/...
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } else {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      return base64;
+    }
+  } catch (error) {
+    console.error('Error converting image to base64:', error);
+    throw error;
+  }
+}
+
 export async function processReceipt(uri: string): Promise<Receipt> {
   try {
     let processableUri = uri;
     
-    // Si c'est un PDF, on doit utiliser le composant PdfConverter
+    // Si c'est un PDF, rejeter pour l'instant
     if (uri.toLowerCase().endsWith('.pdf')) {
-      throw new Error("Please use the PdfConverter component for PDF files");
+      throw new Error("PDF processing is not yet supported");
     }
 
     // Prétraiter l'image
     processableUri = await preprocessImage(processableUri);
 
     // Convertir l'image en base64
-    const response = await fetch(processableUri);
-    const blob = await response.blob();
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64String = reader.result as string;
-        resolve(base64String.split(',')[1]); // Enlever le préfixe data:image/...
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    const base64 = await convertImageToBase64(processableUri);
 
     // Extraire les données avec OpenAI
     const extractedData = await extractReceiptData(base64);
@@ -61,15 +67,17 @@ export async function processReceipt(uri: string): Promise<Receipt> {
     // Créer l'objet Receipt complet
     const receipt: Receipt = {
       id: generateId(),
-      ...extractedData,
+      company: extractedData.company,
+      date: new Date(extractedData.date),
+      items: extractedData.items,
       subtotal: extractedData.subtotal,
       totalAmount: extractedData.totalAmount,
-      taxes: {
-        tps: extractedData.taxes?.tps || 0,
-        tvq: extractedData.taxes?.tvq || 0
-      },
+      taxes: extractedData.taxes,
+      category: extractedData.category,
+      currency: extractedData.currency,
+      metadata: extractedData.metadata,
       originalImage: uri
-    } as Receipt;
+    };
 
     return receipt;
   } catch (error) {
@@ -79,4 +87,4 @@ export async function processReceipt(uri: string): Promise<Receipt> {
 }
 
 // Export par défaut vide pour éviter l'erreur de route
-export default {}; 
+export default {};

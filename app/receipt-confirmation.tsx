@@ -1,23 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { Button, ActivityIndicator, Text } from 'react-native-paper';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { Button, Text } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import ReceiptForm from '@/app/components/ReceiptForm';
 import { Receipt, Category } from '@/app/lib/types';
 import { saveReceipt, updateReceipt, getAllCategories } from '@/app/lib/storage';
-import { generateId } from '@/app/lib/helpers';
+import { generateId, decodeBase64 } from '@/app/lib/helpers';
 import { defaultCategories } from '@/app/lib/categories';
 import { useTheme } from '@/app/themes/ThemeContext';
 import { useLanguage } from '@/app/contexts/LanguageContext';
-
-function base64Decode(str: string): string {
-  try {
-    return atob(str);
-  } catch (e) {
-    console.error('Error decoding base64:', e);
-    return str;
-  }
-}
 
 interface RawProduct {
   id?: string;
@@ -40,7 +31,8 @@ interface RawReceipt {
   };
   category: string;
   currency: string;
-  paymentMethod: string;
+  paymentMethod?: string;
+  originalImage?: string;
   metadata: {
     processedAt: string;
     ocrEngine: string;
@@ -103,7 +95,7 @@ export default function ReceiptConfirmationScreen() {
     }
     
     try {
-      const decodedData = base64Decode(params.receiptData);
+      const decodedData = decodeBase64(params.receiptData);
       const rawReceipt = JSON.parse(decodedData) as RawReceipt;
       const parsedReceipt = parseReceipt(rawReceipt);
       
@@ -115,6 +107,10 @@ export default function ReceiptConfirmationScreen() {
       return parsedReceipt;
     } catch (error) {
       console.error('Error parsing receipt:', error);
+      Alert.alert(
+        t.error, 
+        language === 'fr' ? 'Erreur lors du décodage des données du reçu' : 'Error decoding receipt data'
+      );
       return null;
     }
   });
@@ -129,11 +125,12 @@ export default function ReceiptConfirmationScreen() {
       router.replace('/');
     } catch (error) {
       console.error('Error saving receipt:', error);
+      Alert.alert(
+        t.error, 
+        language === 'fr' ? 'Erreur lors de la sauvegarde du reçu' : 'Error saving receipt'
+      );
     }
   };
-
-  console.log('Current params:', params);
-  console.log('Current receipt state:', receipt);
 
   if (!receipt) {
     return (

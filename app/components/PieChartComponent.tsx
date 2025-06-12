@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, Text } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { formatCurrency } from '@/app/lib/formatting';
 
 export interface PieChartData {
@@ -23,21 +23,10 @@ export default function PieChartComponent({ data = [] }: PieChartComponentProps)
     );
   }
 
-  const size = 200;
-  const radius = size / 2 - 20; // Leave some padding
-  const center = size / 2;
   const total = data.reduce((sum, item) => sum + item.amount, 0);
 
-  // Create simple pie chart using positioned views
   const renderPieSlices = () => {
-    let currentAngle = 0;
-    
     return data.map((item, index) => {
-      const percentage = item.amount / total;
-      const angle = percentage * 360;
-      
-      // For simplicity, we'll show colored squares instead of actual pie slices
-      // This is a basic implementation - for production, consider using SVG or Canvas
       const sliceStyle = {
         backgroundColor: item.color,
         width: 16,
@@ -45,8 +34,6 @@ export default function PieChartComponent({ data = [] }: PieChartComponentProps)
         borderRadius: 8,
         marginRight: 8,
       };
-      
-      currentAngle += angle;
       
       return (
         <View key={item.id} style={styles.legendItem}>

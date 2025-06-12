@@ -22,7 +22,7 @@ export default function BarChartComponent({ data = [] }: BarChartComponentProps)
 
   const maxValue = Math.max(...data.map(item => item.value), 0);
   const chartWidth = Dimensions.get('window').width - 64; // Account for padding
-  const barWidth = (chartWidth - (data.length - 1) * 8) / data.length; // 8px gap between bars
+  const barWidth = Math.max((chartWidth - (data.length - 1) * 8) / data.length, 40); // Minimum 40px width
 
   return (
     <View style={styles.container}>
@@ -31,7 +31,7 @@ export default function BarChartComponent({ data = [] }: BarChartComponentProps)
           const barHeight = maxValue > 0 ? Math.max((item.value / maxValue) * 150, 4) : 4;
           
           return (
-            <View key={index} style={[styles.barContainer, { width: barWidth }]}>
+            <View key={`${item.label}-${index}`} style={[styles.barContainer, { width: barWidth }]}>
               <Text style={styles.barValue} numberOfLines={1}>
                 {formatCurrency(item.value, 'CAD')}
               </Text>
