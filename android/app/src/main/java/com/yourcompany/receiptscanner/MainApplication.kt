@@ -1,4 +1,4 @@
-package com.receiptscanner
+package com.yourcompany.receiptscanner
 
 import android.app.Application
 import android.content.res.Configuration
