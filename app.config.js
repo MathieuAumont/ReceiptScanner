@@ -23,7 +23,11 @@ export default {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff'
       },
-      package: 'com.yourcompany.receiptscanner'
+      package: 'com.yourcompany.receiptscanner',
+      versionCode: 1,
+      compileSdkVersion: 34,
+      targetSdkVersion: 34,
+      buildToolsVersion: '34.0.0'
     },
     web: {
       favicon: './assets/favicon.png',
