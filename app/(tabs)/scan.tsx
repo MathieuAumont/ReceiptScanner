@@ -1,12 +1,10 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useRef, useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import * as MediaLibrary from 'expo-media-library';
 import * as ImagePicker from 'expo-image-picker';
 import { processReceipt } from '@/app/lib/receipt-processing';
 import { generateId, encodeBase64 } from '@/app/lib/helpers';
-import { Receipt } from '@/app/lib/types';
 import { Image as ImageIcon } from 'lucide-react-native';
 import { useTheme } from '@/app/themes/ThemeContext';
 import { useLanguage } from '@/app/contexts/LanguageContext';
@@ -14,9 +12,7 @@ import { useLanguage } from '@/app/contexts/LanguageContext';
 export default function ScanScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const [photo, setPhoto] = useState<string | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
-  const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
   const [facing, setFacing] = useState<CameraType>('back');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +33,6 @@ export default function ScanScreen() {
         );
       }
     })();
-    requestMediaPermission();
   }, []);
 
   if (!permission) {
@@ -160,56 +155,87 @@ export default function ScanScreen() {
 
   return (
     <View style={styles.container}>
-      <CameraView
-        ref={cameraRef}
-        style={styles.camera}
-        facing={facing}
-        onCameraReady={() => {
-          console.log('Camera ready');
-          setIsCameraReady(true);
-        }}
-        onMountError={(error) => {
-          console.error('Camera mount error:', error);
-          setError(t.language === 'fr' ? 'Échec de l\'initialisation de la caméra' : 'Failed to initialize camera');
-        }}
-      >
-        <View style={styles.buttonContainer}>
+      {Platform.OS !== 'web' ? (
+        <CameraView
+          ref={cameraRef}
+          style={styles.camera}
+          facing={facing}
+          onCameraReady={() => {
+            console.log('Camera ready');
+            setIsCameraReady(true);
+          }}
+          onMountError={(error) => {
+            console.error('Camera mount error:', error);
+            setError(t.language === 'fr' ? 'Échec de l\'initialisation de la caméra' : 'Failed to initialize camera');
+          }}
+        >
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={handleImagePick}
+              disabled={isAnalyzing}
+            >
+              <View style={styles.iconContainer}>
+                <ImageIcon size={24} color="#FFFFFF" />
+              </View>
+              <Text style={styles.buttonText}>{t.upload}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.captureButton,
+                (isAnalyzing || !isCameraReady) && styles.captureButtonDisabled
+              ]}
+              onPress={takePicture}
+              disabled={isAnalyzing || !isCameraReady}
+            >
+              <View style={styles.captureButtonInner} />
+            </TouchableOpacity>
+          </View>
+
+          {isAnalyzing && (
+            <View style={styles.analyzingOverlay}>
+              <ActivityIndicator size="large" color="#FFFFFF" />
+              <Text style={styles.analyzingText}>{t.analyzing}</Text>
+            </View>
+          )}
+
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+        </CameraView>
+      ) : (
+        <View style={[styles.webContainer, { backgroundColor: theme.background }]}>
+          <Text style={[styles.webTitle, { color: theme.text }]}>
+            {t.language === 'fr' ? 'Scanner un reçu' : 'Scan Receipt'}
+          </Text>
+          <Text style={[styles.webSubtitle, { color: theme.textSecondary }]}>
+            {t.language === 'fr' ? 'La caméra n\'est pas disponible sur le web. Utilisez le bouton ci-dessous pour télécharger une image.' : 'Camera is not available on web. Use the button below to upload an image.'}
+          </Text>
           <TouchableOpacity
-            style={styles.uploadButton}
+            style={[styles.webUploadButton, { backgroundColor: theme.accent }]}
             onPress={handleImagePick}
             disabled={isAnalyzing}
           >
-            <View style={styles.iconContainer}>
+            {isAnalyzing ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
               <ImageIcon size={24} color="#FFFFFF" />
+            )}
+            <Text style={styles.webUploadText}>
+              {isAnalyzing ? t.analyzing : t.upload}
+            </Text>
+          </TouchableOpacity>
+          
+          {error && (
+            <View style={styles.webErrorContainer}>
+              <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
             </View>
-            <Text style={styles.buttonText}>{t.upload}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.captureButton,
-              (isAnalyzing || !isCameraReady) && styles.captureButtonDisabled
-            ]}
-            onPress={takePicture}
-            disabled={isAnalyzing || !isCameraReady}
-          >
-            <View style={styles.captureButtonInner} />
-          </TouchableOpacity>
+          )}
         </View>
-
-        {isAnalyzing && (
-          <View style={styles.analyzingOverlay}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.analyzingText}>{t.analyzing}</Text>
-          </View>
-        )}
-
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-      </CameraView>
+      )}
     </View>
   );
 }
@@ -306,5 +332,40 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  webContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  webTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  webSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  webUploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  webUploadText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  webErrorContainer: {
+    marginTop: 20,
+    padding: 12,
+    borderRadius: 8,
   },
 });
