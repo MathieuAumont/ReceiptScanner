@@ -6,4 +6,11 @@ declare module 'expo-sharing' {
   }): Promise<void>;
   
   export function isAvailableAsync(): Promise<boolean>;
+
+  const expoSharing: {
+    shareAsync: typeof shareAsync;
+    isAvailableAsync: typeof isAvailableAsync;
+  };
+  
+  export default expoSharing;
 } 
