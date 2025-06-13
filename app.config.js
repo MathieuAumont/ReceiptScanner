@@ -1,10 +1,8 @@
-import 'dotenv/config';
-
 export default {
   expo: {
     name: 'ReceiptScanner',
     slug: 'receipt-scanner',
-    version: '1.0.0',
+    version: '2.2.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
